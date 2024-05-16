@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func getRoot(w http.ResponseWriter, r *http.Request) {
+func getCounter(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("got / request\n")
 	io.WriteString(w, "This is my website!\n")
 }
@@ -19,7 +19,7 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", getRoot)
+	http.HandleFunc("/", getCounter)
 	http.HandleFunc("/hello", getHello)
 	var port int = 3333
 	var host string = "localhost"
