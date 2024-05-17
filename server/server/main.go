@@ -26,10 +26,12 @@ func main() {
 	db.Connect()
 	http.HandleFunc("/", getCounter)
 	http.HandleFunc("/hello", getHello)
-	var port int = 3333
-	var host string = "localhost"
-	addr := fmt.Sprintf("%s:%d", host, port)
-	log.Printf("🚀 Starting server on %s...\n", addr)
+	port := os.Getenv("PORT")
+	host := os.Getenv("HOST")
+
+	addr := fmt.Sprintf("%s:%s", host, port)
+	log.Print("🏗️  Starting the server...")
+	log.Printf("🚀 Listening on %s\n", addr)
 
 	err := http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 
