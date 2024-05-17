@@ -7,7 +7,6 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: root
       MYSQL_PASSWORD: root
       MYSQL_DATABASE: ohno_db
     ports:

@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"os"
 )
+import (
+	"server/db"
+)
 
 func getCounter(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("got / request\n")
@@ -19,6 +22,7 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	db.Connect()
 	http.HandleFunc("/", getCounter)
 	http.HandleFunc("/hello", getHello)
 	var port int = 3333
