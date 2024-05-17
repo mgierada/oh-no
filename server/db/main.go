@@ -48,4 +48,21 @@ func Connect() {
 		log.Fatalf("❌ Error connecting to database.\n %s", pingErr)
 	}
 	log.Printf("✅ Connected to database %s on %s", dbName, dbAddress)
+
+	createCounterTableIfNotExists()
+}
+
+func createCounterTableIfNotExists() {
+	createTableQuery := `
+		CREATE TABLE IF NOT EXISTS counter (
+			current_value INT NOT NULL,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			reseted_at TIMESTAMP NULL DEFAULT NULL
+		);
+	`
+	_, err := db.Exec(createTableQuery)
+	if err != nil {
+		log.Fatalf("❌ Error creating counter table.\n %s", err)
+	}
+	log.Println("✅ Ensured counter table exists.")
 }

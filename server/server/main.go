@@ -13,8 +13,22 @@ import (
 )
 
 func getCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("got / request\n")
-	io.WriteString(w, "This is my website!\n")
+	log.Printf("🔗 received GET /counter request\n")
+
+	counters, err := db.GetAllCounterData()
+	if err != nil {
+		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
+	}
+
+	for _, counter := range counters {
+		log.Printf("Current Value: %d, Updated At: %s, Reseted At: %v\n",
+			counter.CurrentValue, counter.UpdatedAt, counter.ResetedAt.String)
+	}
+}
+
+func updateCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received POST /increment request")
+	db.ManualIncrement()
 }
 
 func getHello(w http.ResponseWriter, r *http.Request) {
@@ -24,8 +38,9 @@ func getHello(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	db.Connect()
-	http.HandleFunc("/", getCounter)
+	http.HandleFunc("/counter", getCounter)
 	http.HandleFunc("/hello", getHello)
+	http.HandleFunc("/increment", updateCounter)
 	port := os.Getenv("PORT")
 	host := os.Getenv("HOST")
 
