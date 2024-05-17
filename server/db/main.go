@@ -12,20 +12,29 @@ import (
 var db *sql.DB
 
 func Connect() {
-	e := godotenv.Load("../.env")
+	e := godotenv.Overload("../.env")
 	if e != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("❌ Error loading .env file.\n %s", e)
+	}
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbProtocol := os.Getenv("DB_PROTOCOL")
+	dbPort := os.Getenv("DB_PORT")
+	dbHost := os.Getenv("DB_HOST")
+	dbAddress := fmt.Sprintf("%s:%s", dbHost, dbPort)
+
+	if dbUser == "" || dbPassword == "" || dbName == "" || dbProtocol == "" || dbPort == "" || dbHost == "" {
+		log.Fatal("❌ One or more environment variables are missing")
 	}
 
-	db_name := os.Getenv("DB_NAME")
-	fmt.Println(db_name)
-
 	cfg := mysql.Config{
-		User:   os.Getenv("DB_USER"),
-		Passwd: os.Getenv("DB_PASSWORD"),
-		Net:    "tcp",
-		Addr:   "127.0.0.1:3306",
-		DBName: os.Getenv("DB_NAME"),
+		User:   dbUser,
+		Passwd: dbPassword,
+		Net:    dbProtocol,
+		// Addr:   "127.0.0.1:3306",
+		Addr:   dbAddress,
+		DBName: dbName,
 	}
 	// Get a database handle.
 	var err error
@@ -38,5 +47,5 @@ func Connect() {
 	if pingErr != nil {
 		log.Fatal(pingErr)
 	}
-	fmt.Println("Connected!")
+	log.Printf("✅ Connected to database %s on %s", dbName, dbAddress)
 }
