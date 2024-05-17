@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-// Entry represents a row in the entries table.
-type CunterUpser struct {
-	Name  string
-	Value string
-}
-
 // Counter represents a row in the counter table
 type Counter struct {
 	CurrentValue int
@@ -93,29 +87,6 @@ func ManualIncrement() error {
 
 	return nil
 }
-
-// // UpsertEntry inserts a new entry or updates the existing entry if it already exists.
-// func UpsertEntry(counter CunterUpser) error {
-// 	query := `
-//     INSERT INTO couter (name, value)
-//     VALUES (?, ?)
-//     ON DUPLICATE KEY UPDATE
-//         value = VALUES(value);`
-//
-// 	stmt, err := db.Prepare(query)
-// 	if err != nil {
-// 		return fmt.Errorf("❌ Error preparing query:\n %v", err)
-// 	}
-// 	defer stmt.Close()
-//
-// 	_, err = stmt.Exec(counter.Name, counter.Value)
-// 	if err != nil {
-// 		return fmt.Errorf("❌ Error executing query:\n %v", err)
-// 	}
-//
-// 	log.Printf("✅ Entry upserted: %s = %s", counter.Name, counter.Value)
-// 	return nil
-// }
 
 // GetAllCounterData retrieves all rows from the counter table
 func GetAllCounterData() ([]Counter, error) {

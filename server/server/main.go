@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +25,19 @@ func getCounter(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Current Value: %d, Updated At: %s, Reseted At: %v\n",
 			counter.CurrentValue, counter.UpdatedAt, counter.ResetedAt.String)
 	}
+
+	// Convert the counters slice to JSON
+	jsonData, err := json.Marshal(counters)
+	if err != nil {
+		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
+		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the Content-Type header and write the JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
 }
 
 func updateCounter(w http.ResponseWriter, r *http.Request) {
