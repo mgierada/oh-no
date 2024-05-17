@@ -32,20 +32,20 @@ func Connect() {
 		User:   dbUser,
 		Passwd: dbPassword,
 		Net:    dbProtocol,
-		// Addr:   "127.0.0.1:3306",
 		Addr:   dbAddress,
 		DBName: dbName,
 	}
+
 	// Get a database handle.
 	var err error
 	db, err = sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("❌ Error getting a database handle.\n, %s", err)
 	}
 
 	pingErr := db.Ping()
 	if pingErr != nil {
-		log.Fatal(pingErr)
+		log.Fatalf("❌ Error connecting to database.\n %s", pingErr)
 	}
 	log.Printf("✅ Connected to database %s on %s", dbName, dbAddress)
 }
