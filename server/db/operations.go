@@ -3,14 +3,9 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 )
-
-// Entry represents a row in the entries table.
-type CunterUpser struct {
-	Name  string
-	Value string
-}
 
 // Counter represents a row in the counter table
 type Counter struct {
@@ -42,7 +37,7 @@ func UpsertCounterData() error {
 	} else {
 		lastUpdated, err := time.Parse("2006-01-02 15:04:05", counter.UpdatedAt)
 		// if time.Since(lastUpdated) >= 24*time.Hour {
-		if time.Since(lastUpdated) >= time.Minute {
+		if time.Since(lastUpdated) >= time.Second {
 			_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
 			if err != nil {
 				tx.Rollback()
@@ -57,6 +52,25 @@ func UpsertCounterData() error {
 	}
 
 	return nil
+}
+
+func runBackgroundTask() {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			err := UpsertCounterData()
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}
+}
+
+func RunBackgroundTask() {
+	go runBackgroundTask()
 }
 
 // ManualIncrement increments the counter value manually

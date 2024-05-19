@@ -41,10 +41,7 @@ func UpdateCounter(w http.ResponseWriter, r *http.Request) {
 
 func AutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /autoincrement request")
-	for {
-		err := db.UpsertCounterData()
-		if err != nil {
-			log.Fatalf("❌ Error incrementing counter.\n %s", err)
-		}
-	}
+	db.RunBackgroundTask()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Background task started"))
 }
