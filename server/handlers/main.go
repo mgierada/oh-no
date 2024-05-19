@@ -39,9 +39,16 @@ func UpdateCounter(w http.ResponseWriter, r *http.Request) {
 	db.ManualIncrement()
 }
 
-func AutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received POST /autoincrement request")
+func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received POST /start-incr request")
 	db.RunBackgroundTask()
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Background task started"))
+}
+
+func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received POST /stop_incr request")
+	db.StopBackgroundTask()
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Background task stopped"))
 }
