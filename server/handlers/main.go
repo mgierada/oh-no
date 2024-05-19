@@ -62,3 +62,21 @@ func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 	log.Println("🔴 Background task stopped")
 }
+
+func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received POST /ohno request")
+	// TODO: Reset the counter
+	db.ResetCounter()
+	// TODO: Record the event
+	// db.CreateOhNoEvent()
+	w.WriteHeader(http.StatusOK)
+	response := map[string]string{"message": "Oh No! Event recorded"}
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
+		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
+	log.Println("🟢 Oh No! Event recorded")
+}
