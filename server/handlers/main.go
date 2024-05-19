@@ -43,12 +43,29 @@ func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /start-incr request")
 	db.RunBackgroundTask()
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Background task started"))
+
+	response := map[string]string{"message": "Background task stared"}
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
+		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
+	log.Println("🟢 Background task started")
 }
 
 func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /stop_incr request")
 	db.StopBackgroundTask()
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Background task stopped"))
+	response := map[string]string{"message": "Background task stopped"}
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
+		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
+	log.Println("🔴 Background task stopped")
 }
