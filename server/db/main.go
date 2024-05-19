@@ -50,6 +50,7 @@ func Connect() {
 	log.Printf("✅ Connected to database %s on %s", dbName, dbAddress)
 
 	createCounterTableIfNotExists()
+	createHistoricalCountersTableIfNotExists()
 }
 
 func createCounterTableIfNotExists() {
@@ -65,4 +66,20 @@ func createCounterTableIfNotExists() {
 		log.Fatalf("❌ Error creating counter table.\n %s", err)
 	}
 	log.Println("✅ Ensured counter table exists.")
+}
+
+func createHistoricalCountersTableIfNotExists() {
+	createTableQuery := `
+		CREATE TABLE IF NOT EXISTS historical_counters (
+			counter_id CHAR(36) PRIMARY KEY NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			value INT NOT NULL
+		);
+	`
+	_, err := db.Exec(createTableQuery)
+	if err != nil {
+		log.Fatalf("❌ Error creating histiorical_counter table.\n %s", err)
+	}
+	log.Println("✅ Ensured histiorical_counter table exists.")
 }

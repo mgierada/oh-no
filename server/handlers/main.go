@@ -34,11 +34,6 @@ func GetCounter(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
-func UpdateCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received POST /increment request")
-	db.ManualIncrement()
-}
-
 func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /start-incr request")
 	db.RunBackgroundTask()

@@ -14,7 +14,6 @@ func main() {
 	db.Connect()
 	http.HandleFunc("/counter", handlers.GetCounter)
 	http.HandleFunc("/start-incr", handlers.StartAutoUpdateCounter)
-	http.HandleFunc("/increment", handlers.UpdateCounter)
 	http.HandleFunc("/stop-incr", handlers.StopAutoUpdateCounter)
 	port := os.Getenv("PORT")
 	host := os.Getenv("HOST")
