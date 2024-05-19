@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// Entry represents a row in the entries table.
+type CunterUpser struct {
+	Name  string
+	Value string
+}
+
 // Counter represents a row in the counter table
 type Counter struct {
 	CurrentValue int
@@ -35,7 +41,8 @@ func UpsertCounterData() error {
 		}
 	} else {
 		lastUpdated, err := time.Parse("2006-01-02 15:04:05", counter.UpdatedAt)
-		if time.Since(lastUpdated) >= 24*time.Hour {
+		// if time.Since(lastUpdated) >= 24*time.Hour {
+		if time.Since(lastUpdated) >= time.Minute {
 			_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
 			if err != nil {
 				tx.Rollback()
