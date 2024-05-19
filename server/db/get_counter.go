@@ -1,31 +1,26 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 )
 
-func GetAllCounterData() ([]Counter, error) {
-	query := "SELECT current_value, updated_at, reseted_at FROM counter"
-	rows, err := db.Query(query)
+func GetCounter() (Counter, error) {
+	var counter Counter
+	query := "SELECT current_value, updated_at, reseted_at FROM counter LIMIT 1"
+	row := db.QueryRow(query)
+	err := row.Scan(&counter.CurrentValue, &counter.UpdatedAt, &counter.ResetedAt)
+
 	if err != nil {
-		return nil, fmt.Errorf("❌ Error querying counter table.\n %s", err)
-	}
-	defer rows.Close()
-
-	var counters []Counter
-
-	for rows.Next() {
-		var counter Counter
-		err := rows.Scan(&counter.CurrentValue, &counter.UpdatedAt, &counter.ResetedAt)
-		if err != nil {
-			return nil, fmt.Errorf("❌ Error scanning row.\n %s", err)
+		if err == sql.ErrNoRows {
+			emptyCounter := Counter{
+				CurrentValue: 0,
+				UpdatedAt:    "",
+				ResetedAt:    sql.NullString{},
+			}
+			return emptyCounter, nil
 		}
-		counters = append(counters, counter)
+		return Counter{}, fmt.Errorf("❌ Error querying counter table.\n %s", err)
 	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("❌ Row iteration error.\n %s", err)
-	}
-
-	return counters, nil
+	return counter, nil
 }

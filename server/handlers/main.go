@@ -10,18 +10,16 @@ import (
 func GetCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received GET /counter request\n")
 
-	counters, err := db.GetAllCounterData()
+	counter, err := db.GetCounter()
 	if err != nil {
 		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
 	}
 
-	for _, counter := range counters {
-		log.Printf("Current Value: %d, Updated At: %s, Reseted At: %v\n",
-			counter.CurrentValue, counter.UpdatedAt, counter.ResetedAt.String)
-	}
+	log.Printf("Current Value: %d, Updated At: %s, Reseted At: %v\n",
+		counter.CurrentValue, counter.UpdatedAt, counter.ResetedAt.String)
 
 	// Convert the counters slice to JSON
-	jsonData, err := json.Marshal(counters)
+	jsonData, err := json.Marshal(counter)
 	if err != nil {
 		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
 		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
