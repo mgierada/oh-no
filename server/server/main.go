@@ -13,6 +13,7 @@ import (
 func main() {
 	db.Connect()
 	http.HandleFunc("/ohno", handlers.RecordOhNoEvent)
+	http.HandleFunc("/historical", handlers.GetHistoricalCounter)
 	http.HandleFunc("/counter", handlers.GetCounter)
 	http.HandleFunc("/start-incr", handlers.StartAutoUpdateCounter)
 	http.HandleFunc("/stop-incr", handlers.StopAutoUpdateCounter)

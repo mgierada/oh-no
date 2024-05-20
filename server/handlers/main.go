@@ -83,3 +83,28 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 	log.Println("🟢 Oh No! Event recorded")
 }
+
+func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received GET /historical request\n")
+
+	hCounters, err := db.GetHistoricalCounters()
+	if err != nil {
+		log.Fatalf("❌ Error retrieving historical_counter data.\n %s", err)
+	}
+
+	for _, hCounter := range hCounters {
+		log.Printf("CounterId: %s, Updated At: %s, Created_At: %v Value: %d,\n",
+			hCounter.CounterID, hCounter.CreatedAt, hCounter.UpdatedAt, hCounter.Value)
+	}
+
+	jsonData, err := json.Marshal(hCounters)
+	if err != nil {
+		log.Fatalf("❌ Error marshaling historical_counter data to JSON.\n %s", err)
+		http.Error(w, "Error marshaling historical_counter data to JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
+}
