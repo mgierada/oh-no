@@ -65,10 +65,13 @@ func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 
 func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /ohno request")
-	// TODO: Reset the counter
-	db.ResetCounter()
-	// TODO: Record the event
-	// db.CreateOhNoEvent()
+	last_value, err := db.ResetCounter()
+	if err != nil {
+		log.Fatalf("❌ Error resetting counter.\n %s", err)
+		http.Error(w, "Error resetting counter.", http.StatusInternalServerError)
+		return
+	}
+	db.CreateHistoricalCounter(last_value)
 	w.WriteHeader(http.StatusOK)
 	response := map[string]string{"message": "Oh No! Event recorded"}
 	jsonData, err := json.Marshal(response)
