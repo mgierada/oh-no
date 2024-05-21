@@ -7,6 +7,10 @@ import (
 	"server/db"
 )
 
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 func GetCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received GET /counter request\n")
 
@@ -64,24 +68,40 @@ func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 }
 
 func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received POST /ohno request")
-	last_value, err := db.ResetCounter()
-	if err != nil {
-		log.Fatalf("❌ Error resetting counter.\n %s", err)
-		http.Error(w, "Error resetting counter.", http.StatusInternalServerError)
+	log.Printf("🔗 received /ohno request")
+	switch r.Method {
+	case "POST":
+		last_value, err := db.ResetCounter()
+		if err != nil {
+			log.Fatalf("❌ Error resetting counter.\n %s", err)
+			http.Error(w, "Error resetting counter.", http.StatusInternalServerError)
+			return
+		}
+		db.CreateHistoricalCounter(last_value)
+		w.WriteHeader(http.StatusOK)
+		response := map[string]string{"message": "Oh No! Event recorded"}
+		jsonData, err := json.Marshal(response)
+		if err != nil {
+			log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
+			http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
+			return
+		}
+		w.Write(jsonData)
+		log.Println("🟢 Oh No! Event recorded")
+	default:
+		log.Printf("❌ Only POST method is allowed")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		errResponse := ErrorResponse{Message: "Only POST method is allowed"}
+		jsonData, err := json.Marshal(errResponse)
+		if err != nil {
+			log.Printf("❌ Error marshaling error response to JSON.\n %s", err)
+			http.Error(w, "Error marshaling error response to JSON", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 		return
 	}
-	db.CreateHistoricalCounter(last_value)
-	w.WriteHeader(http.StatusOK)
-	response := map[string]string{"message": "Oh No! Event recorded"}
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
-		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsonData)
-	log.Println("🟢 Oh No! Event recorded")
 }
 
 func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
