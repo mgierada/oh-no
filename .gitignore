@@ -22,3 +22,5 @@ go.work
 
 # env variables
 *.env
+
+run_server

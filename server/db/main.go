@@ -14,9 +14,10 @@ var db *sql.DB
 func Connect() {
 	e := godotenv.Overload("../.env")
 	if e != nil {
-		log.Fatalf("❌ Error loading .env file.\n %s", e)
+		log.Printf("❌ Error loading .env file.\n %s", e)
 	}
 	dbUser := os.Getenv("DB_USER")
+	log.Println(dbUser)
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	dbProtocol := os.Getenv("DB_PROTOCOL")
@@ -25,7 +26,7 @@ func Connect() {
 	dbAddress := fmt.Sprintf("%s:%s", dbHost, dbPort)
 
 	if dbUser == "" || dbPassword == "" || dbName == "" || dbProtocol == "" || dbPort == "" || dbHost == "" {
-		log.Fatal("❌ One or more environment variables are missing")
+		log.Fatalf("❌ One or more environment variables are missing")
 	}
 
 	cfg := mysql.Config{
@@ -40,7 +41,7 @@ func Connect() {
 	var err error
 	db, err = sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
-		log.Fatalf("❌ Error getting a database handle.\n, %s", err)
+		log.Printf("❌ Error getting a database handle.\n, %s", err)
 	}
 
 	pingErr := db.Ping()
