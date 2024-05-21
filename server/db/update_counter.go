@@ -3,8 +3,11 @@ package db
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -59,8 +62,35 @@ func UpsertCounterData() error {
 	return nil
 }
 
+var ErrEnvVarEmpty = errors.New("getenv: environment variable empty")
+
+func getEnvStr(key string) (string, error) {
+	v := os.Getenv(key)
+	if v == "" {
+		return v, ErrEnvVarEmpty
+	}
+	return v, nil
+}
+
+func getEnvInt(key string) (int, error) {
+	s, err := getEnvStr(key)
+	if err != nil {
+		return 0, err
+	}
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
+}
+
 func runBackgroundTask(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Second)
+	incrementFrequencyInHours, ok := getEnvInt("COUNTER_INCREMENT_FREQUENCY_IN_HOURS")
+	if ok != nil {
+		log.Println("❌ Error getting COUNTER_INCREMENT_FREQUENCY_IN_HOURS")
+		return
+	}
+	ticker := time.NewTicker(time.Duration(incrementFrequencyInHours) * time.Hour)
 	defer ticker.Stop()
 
 	for {
