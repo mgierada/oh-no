@@ -7,7 +7,7 @@ import (
 	"server/db"
 )
 
-type ErrorResponse struct {
+type ServerResponse struct {
 	Message string `json:"message"`
 }
 
@@ -71,37 +71,39 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /ohno request")
 	switch r.Method {
 	case "POST":
-		last_value, err := db.ResetCounter()
-		if err != nil {
-			log.Fatalf("❌ Error resetting counter.\n %s", err)
+		last_value, ok := db.ResetCounter()
+		if ok != nil {
+			log.Printf("❌ Error resetting counter.\n %s", ok)
 			http.Error(w, "Error resetting counter.", http.StatusInternalServerError)
 			return
 		}
-		db.CreateHistoricalCounter(last_value)
-		w.WriteHeader(http.StatusOK)
-		response := map[string]string{"message": "Oh No! Event recorded"}
-		jsonData, err := json.Marshal(response)
-		if err != nil {
-			log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
-			http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
+		ok = db.CreateHistoricalCounter(last_value)
+		if ok != nil {
+			log.Printf("❌ Error creating historical counter.\n %s", ok)
+			http.Error(w, "Error creating historical counter.", http.StatusInternalServerError)
 			return
 		}
-		w.Write(jsonData)
+		response := ServerResponse{Message: "Oh No! Event recorded"}
+		marshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Oh No! Event recorded")
 	default:
 		log.Printf("❌ Only POST method is allowed")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		errResponse := ErrorResponse{Message: "Only POST method is allowed"}
-		jsonData, err := json.Marshal(errResponse)
-		if err != nil {
-			log.Printf("❌ Error marshaling error response to JSON.\n %s", err)
-			http.Error(w, "Error marshaling error response to JSON", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(jsonData)
+		errResponse := ServerResponse{Message: "Only POST method is allowed"}
+		marshalJson(w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
+}
+
+func marshalJson(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("❌ Error marshaling data to JSON.\n %s", err)
+		http.Error(w, "Error marshaling data to JSON", http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
 }
 
 func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
