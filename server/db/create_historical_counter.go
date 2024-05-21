@@ -7,6 +7,11 @@ import (
 )
 
 func CreateHistoricalCounter(lastValue int) error {
+	if lastValue <= 0 {
+		message := fmt.Sprintf("❌ Error creating new historical counter. Value must be greater than 0. Received: %d", lastValue)
+		log.Printf(message)
+		return nil
+	}
 	newCounterId := uuid.New().String()
 	_, err := db.Exec("INSERT INTO historical_counters (counter_id, value) VALUES (?,?)", newCounterId, lastValue)
 	if err != nil {

@@ -84,26 +84,14 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		response := ServerResponse{Message: "Oh No! Event recorded"}
-		marshalJson(w, http.StatusOK, response)
+		MarshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Oh No! Event recorded")
 	default:
 		log.Printf("❌ Only POST method is allowed")
 		errResponse := ServerResponse{Message: "Only POST method is allowed"}
-		marshalJson(w, http.StatusMethodNotAllowed, errResponse)
+		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
-}
-
-func marshalJson(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.Printf("❌ Error marshaling data to JSON.\n %s", err)
-		http.Error(w, "Error marshaling data to JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsonData)
 }
 
 func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
