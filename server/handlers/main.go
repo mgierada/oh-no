@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"server/db"
@@ -12,58 +11,29 @@ type ServerResponse struct {
 }
 
 func GetCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received GET /counter request\n")
+	log.Printf("🔗 received /counter request\n")
 
 	counter, err := db.GetCounter()
 	if err != nil {
 		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
 	}
 
-	log.Printf("Current Value: %d, Updated At: %s, Reseted At: %v\n",
-		counter.CurrentValue, counter.UpdatedAt, counter.ResetedAt.String)
-
-	// Convert the counters slice to JSON
-	jsonData, err := json.Marshal(counter)
-	if err != nil {
-		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
-		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	// Set the Content-Type header and write the JSON response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonData)
+	MarshalJson(w, http.StatusOK, counter)
 }
 
 func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /start-incr request")
 	db.RunBackgroundTask()
-	w.WriteHeader(http.StatusOK)
-
-	response := map[string]string{"message": "Background task stared"}
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
-		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsonData)
+	response := ServerResponse{Message: "Background task stared."}
+	MarshalJson(w, http.StatusOK, response)
 	log.Println("🟢 Background task started")
 }
 
 func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /stop_incr request")
 	db.StopBackgroundTask()
-	w.WriteHeader(http.StatusOK)
-	response := map[string]string{"message": "Background task stopped"}
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		log.Fatalf("❌ Error marshaling counter data to JSON.\n %s", err)
-		http.Error(w, "Error marshaling counter data to JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Write(jsonData)
+	response := ServerResponse{Message: "Background task stopped."}
+	MarshalJson(w, http.StatusOK, response)
 	log.Println("🔴 Background task stopped")
 }
 
@@ -102,19 +72,5 @@ func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("❌ Error retrieving historical_counter data.\n %s", err)
 	}
 
-	for _, hCounter := range hCounters {
-		log.Printf("CounterId: %s, Updated At: %s, Created_At: %v Value: %d,\n",
-			hCounter.CounterID, hCounter.CreatedAt, hCounter.UpdatedAt, hCounter.Value)
-	}
-
-	jsonData, err := json.Marshal(hCounters)
-	if err != nil {
-		log.Fatalf("❌ Error marshaling historical_counter data to JSON.\n %s", err)
-		http.Error(w, "Error marshaling historical_counter data to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonData)
+	MarshalJson(w, http.StatusOK, hCounters)
 }
