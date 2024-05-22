@@ -1,18 +1,18 @@
 version: "3.8"
 
 services:
-  mysqldb:
-    image: mysql:8.0
-    container_name: mysql_container
+  postgresdb:
+    image: postgres:latest
+    container_name: postgres_container
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_PASSWORD: root
-      MYSQL_DATABASE: ohno_db
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: root
+      POSTGRES_DB: ohno_db
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
 
 volumes:
   db_data:

@@ -86,11 +86,13 @@ func getEnvInt(key string) (int, error) {
 
 func runBackgroundTask(ctx context.Context) {
 	incrementFrequencyInHours, ok := getEnvInt("COUNTER_INCREMENT_FREQUENCY_IN_HOURS")
+	log.Println("incrementFrequencyInHours", incrementFrequencyInHours)
 	if ok != nil {
 		log.Println("❌ Error getting COUNTER_INCREMENT_FREQUENCY_IN_HOURS")
 		return
 	}
-	ticker := time.NewTicker(time.Duration(incrementFrequencyInHours) * time.Hour)
+	ticker := time.NewTicker(1 * time.Second)
+	// ticker := time.NewTicker(time.Duration(incrementFrequencyInHours) * time.Hour)
 	defer ticker.Stop()
 
 	for {
