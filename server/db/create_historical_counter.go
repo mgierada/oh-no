@@ -13,7 +13,7 @@ func CreateHistoricalCounter(lastValue int) error {
 		return nil
 	}
 	newCounterId := uuid.New().String()
-	_, err := db.Exec("INSERT INTO historical_counters (counter_id, value) VALUES (?,?)", newCounterId, lastValue)
+	_, err := db.Exec("INSERT INTO historical_counters (counter_id, value) VALUES ($1, $2)", newCounterId, lastValue)
 	if err != nil {
 		message := fmt.Sprintf("❌ Error inserting new historical counter row.\n %s", err)
 		log.Fatalf(message)
