@@ -42,9 +42,14 @@ func UpsertCounterData() error {
 			return fmt.Errorf("❌ Error querying counter table.\n %s", err)
 		}
 	} else {
+		log.Println("counter.UpdatedAt: ", counter.UpdatedAt)
 		lastUpdated, err := time.Parse("2006-01-02 15:04:05", counter.UpdatedAt)
-		// if time.Since(lastUpdated) >= 24*time.Hour {
-		if time.Since(lastUpdated) >= time.Second {
+		if time.Since(lastUpdated) >= 24*time.Hour {
+			log.Println("lastUpdated: ", lastUpdated)
+			log.Println("time.Since(lastUpdated): ", time.Since(lastUpdated))
+			log.Println("time.Since(lastUpdated) >= 24*time.Hour: ", time.Since(lastUpdated) >= 24*time.Hour)
+
+			// if time.Since(lastUpdated) >= time.Second {
 			_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
 			if err != nil {
 				tx.Rollback()
