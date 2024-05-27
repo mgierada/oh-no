@@ -17,6 +17,7 @@ func main() {
 	http.HandleFunc("/counter", handlers.GetCounter)
 	http.HandleFunc("/start-incr", handlers.StartAutoUpdateCounter)
 	http.HandleFunc("/stop-incr", handlers.StopAutoUpdateCounter)
+	http.HandleFunc("/increment", handlers.IncrementCounter)
 	port := os.Getenv("PORT")
 	host := os.Getenv("HOST")
 

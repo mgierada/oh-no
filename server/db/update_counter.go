@@ -18,7 +18,6 @@ type Counter struct {
 	ResetedAt    sql.NullString
 }
 
-// var db *sql.DB
 var cancelFunc context.CancelFunc
 var taskRunning bool
 

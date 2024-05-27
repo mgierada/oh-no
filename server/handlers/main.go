@@ -10,33 +10,6 @@ type ServerResponse struct {
 	Message string `json:"message"`
 }
 
-func GetCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received /counter request\n")
-
-	counter, err := db.GetCounter()
-	if err != nil {
-		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
-	}
-
-	MarshalJson(w, http.StatusOK, counter)
-}
-
-func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received POST /start-incr request")
-	db.RunBackgroundTask()
-	response := ServerResponse{Message: "Background task stared."}
-	MarshalJson(w, http.StatusOK, response)
-	log.Println("🟢 Background task started")
-}
-
-func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received POST /stop_incr request")
-	db.StopBackgroundTask()
-	response := ServerResponse{Message: "Background task stopped."}
-	MarshalJson(w, http.StatusOK, response)
-	log.Println("🔴 Background task stopped")
-}
-
 func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /ohno request")
 	switch r.Method {
@@ -62,15 +35,4 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
-}
-
-func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received GET /historical request\n")
-
-	hCounters, err := db.GetHistoricalCounters()
-	if err != nil {
-		log.Fatalf("❌ Error retrieving historical_counter data.\n %s", err)
-	}
-
-	MarshalJson(w, http.StatusOK, hCounters)
 }
