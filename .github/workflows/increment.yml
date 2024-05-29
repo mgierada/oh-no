@@ -1,8 +1,8 @@
-name: Daily increment
+name: Daily Increment
 
 on:
   schedule:
-    # - cron: "0 7 * * *"
+    # - cron: "0 9 * * *"
     - cron: "*/5 * * * *"
 
 jobs:
@@ -10,7 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
       - name: Make HTTP request
         run: |
-          curl -X POST "https://ohno-server.fly.dev/increment" \
-          -H "Content-Type: application/json"
+          response=$(curl -s -o response.txt -w "%{http_code}" -X POST "https://ohno-server.fly.dev/increment" \
+            -H "Content-Type: application/json")
+          cat response.txt
+          if [ "$response" -ne 200 ]; then
+            echo "Request failed with status code $response"
+            exit 1
+          fi
