@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-
       - name: Make HTTP request
         run: |
           response=$(curl -s -o response.txt -w "%{http_code}" -X POST "https://ohno-server.fly.dev/increment" \
