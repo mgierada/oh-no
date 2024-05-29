@@ -3,12 +3,12 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"server/db"
+	"server/coroutines"
 )
 
 func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /start-incr request")
-	db.RunBackgroundTask()
+	coroutines.RunBackgroundTask()
 	response := ServerResponse{Message: "Background task stared."}
 	MarshalJson(w, http.StatusOK, response)
 	log.Println("🟢 Background task started")
@@ -16,8 +16,8 @@ func StartAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 
 func StopAutoUpdateCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received POST /stop_incr request")
-	db.StopBackgroundTask()
 	response := ServerResponse{Message: "Background task stopped."}
+	coroutines.StopBackgroundTask()
 	MarshalJson(w, http.StatusOK, response)
 	log.Println("🔴 Background task stopped")
 }
