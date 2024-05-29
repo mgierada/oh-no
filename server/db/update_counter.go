@@ -47,20 +47,22 @@ func UpsertCounterData() error {
 			return fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
 		}
 
-		lastReseted, err := time.Parse(time.RFC3339Nano, counter.ResetedAt.String)
-		if err != nil {
-			tx.Rollback()
-			log.Printf("Error parsing reseted_at timestamp.\n %s", err)
-			return fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
-		}
-
-		if lastReseted.After(lastUpdated) || lastReseted.Equal(lastUpdated) {
-			log.Println("Counter was reseted. lastReseted <= lastUpdated")
-			_, err = tx.Exec("UPDATE counter SET current_value = 1, updated_at = NOW()")
+		if counter.ResetedAt.Valid {
+			lastReseted, err := time.Parse(time.RFC3339Nano, counter.ResetedAt.String)
 			if err != nil {
 				tx.Rollback()
-				log.Printf("Error updating counter.\n %s", err)
-				return fmt.Errorf("❌ Error updating counter row.\n %s", err)
+				log.Printf("Error parsing reseted_at timestamp.\n %s", err)
+				return fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
+			}
+
+			if lastReseted.After(lastUpdated) || lastReseted.Equal(lastUpdated) {
+				log.Println("Counter was reseted. lastReseted <= lastUpdated")
+				_, err = tx.Exec("UPDATE counter SET current_value = 1, updated_at = NOW()")
+				if err != nil {
+					tx.Rollback()
+					log.Printf("Error updating counter.\n %s", err)
+					return fmt.Errorf("❌ Error updating counter row.\n %s", err)
+				}
 			}
 		}
 
