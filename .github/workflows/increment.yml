@@ -2,8 +2,7 @@ name: Daily Increment
 
 on:
   schedule:
-    # - cron: "0 9 * * *"
-    - cron: "*/5 * * * *"
+    - cron: "0 5 * * *"
 
 jobs:
   call-endpoint:
