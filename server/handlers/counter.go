@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"server/db"
@@ -33,6 +34,35 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		db.UpsertCounterData()
+		response := ServerResponse{Message: "Counter incremented successfully"}
+		MarshalJson(w, http.StatusOK, response)
+		log.Println("🟢 Counter incremented successfully")
+	default:
+		log.Printf("❌ Only POST method is allowed")
+		errResponse := ServerResponse{Message: "Only POST method is allowed"}
+		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
+		return
+	}
+}
+
+type ManualCouterIncrementRequest struct {
+	Value int `json:"value"`
+}
+
+func SetCounterValue(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received /manual-increment request")
+
+	switch r.Method {
+	case "POST":
+		var body ManualCouterIncrementRequest
+		err := json.NewDecoder(r.Body).Decode(&body)
+		if err != nil {
+			log.Printf("❌ Error decoding request body.\n %s", err)
+			errResponse := ServerResponse{Message: "Error decoding request body"}
+			MarshalJson(w, http.StatusBadRequest, errResponse)
+			return
+		}
+		db.SetCounter(body.Value)
 		response := ServerResponse{Message: "Counter incremented successfully"}
 		MarshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Counter incremented successfully")
