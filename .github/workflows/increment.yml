@@ -1,0 +1,15 @@
+name: Daily increment
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+
+jobs:
+  call-endpoint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Make HTTP request
+        run: |
+          curl -X POST "https://ohno-server.fly.dev/increment" \
+          -H "Content-Type: application/json"
