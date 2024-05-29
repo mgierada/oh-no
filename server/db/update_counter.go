@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-// Counter represents a row in the counter table
 type Counter struct {
 	CurrentValue int
 	UpdatedAt    string
@@ -21,7 +20,6 @@ type Counter struct {
 var cancelFunc context.CancelFunc
 var taskRunning bool
 
-// UpsertCounterData upserts the counter data, increasing current_value by one
 func UpsertCounterData() error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -42,14 +40,12 @@ func UpsertCounterData() error {
 			return fmt.Errorf("❌ Error querying counter table.\n %s", err)
 		}
 	} else {
-		log.Println("counter.UpdatedAt: ", counter.UpdatedAt)
-		lastUpdated, err := time.Parse("2006-01-02 15:04:05", counter.UpdatedAt)
+		lastUpdated, err := time.Parse(time.RFC3339Nano, counter.UpdatedAt)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
+		}
 		if time.Since(lastUpdated) >= 24*time.Hour {
-			log.Println("lastUpdated: ", lastUpdated)
-			log.Println("time.Since(lastUpdated): ", time.Since(lastUpdated))
-			log.Println("time.Since(lastUpdated) >= 24*time.Hour: ", time.Since(lastUpdated) >= 24*time.Hour)
-
-			// if time.Since(lastUpdated) >= time.Second {
 			_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
 			if err != nil {
 				tx.Rollback()
