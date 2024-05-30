@@ -162,9 +162,56 @@ func TestGetCounterEmpty(t *testing.T) {
 	}
 }
 
+// NOTE: Test covers a situation where there are no existing rows in the counter table and we simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql null string
+func TestUpsertCounterData(t *testing.T) {
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Call the UpsertCounterData function
+	err := UpsertCounterData()
+	if err != nil {
+		t.Fatalf("failed to upsert counter data: %s", err)
+	}
+
+	// Test GetCounter function
+	counter, err := GetCounter()
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	// Check current value
+	if counter.CurrentValue != 1 {
+		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+
+	// Allow for a small time difference (e.g., 5 seconds)
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 5 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	// Check reseted_at (should be null)
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
+
+	// Cleanup table after test
+	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
+	}
+}
+
+// NOTE: Test covers a typical situation where there are some existing rows in the counter table and we simply need to update the counter.
+// It is expected to update a increment the counter by one and update the updated_at field to NOW().
 func TestUpsertCounterDataTypicalCase(t *testing.T) {
-	// NOTE: Test covers a typical situation where there are some existing rows in the counter table and we simply need to update the counter.
-	// It is expected to update a increment the counter by one and update the updated_at field to NOW().
 
 	// Insert a row into the counter table
 	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, '2024-05-28 12:34:56')`)
@@ -203,6 +250,56 @@ func TestUpsertCounterDataTypicalCase(t *testing.T) {
 	// Allow for a small time difference - 1 seconds
 	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
 		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
+
+	// Cleanup table after test
+	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
+	}
+}
+
+// NOTE: Test covers a situation where there are some existing rows in the counter table and we
+// cannot update the counter because 24h did not pass since the last update.
+// It is expected that no counter is updated.
+func TestUpsertCounterDataTimeDidNotPass(t *testing.T) {
+	// Check updated_at (should be close to current time)
+	updatedLessThan24hAgo := time.Now().UTC().Add(-23 * time.Hour)
+	parsedUpdatedLessThan24hAgo := updatedLessThan24hAgo.Format(time.RFC3339)
+
+	// Insert a row into the counter table
+	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, $1)`, parsedUpdatedLessThan24hAgo)
+	if ierr != nil {
+		t.Fatalf("failed to insert into table: %s", ierr)
+	}
+
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Test UpsertCounterData
+	err := UpsertCounterData()
+	if err != nil {
+		t.Fatalf("failed to upsert counter data: %s", err)
+	}
+
+	// Test GetCounter function
+	counter, err := GetCounter()
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 42 {
+		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
+	}
+
+	// Check updated_at (should be intact)
+	if counter.UpdatedAt != parsedUpdatedLessThan24hAgo {
+		t.Errorf("expected updated_at: '%s' to not change, got '%s'", parsedUpdatedLessThan24hAgo, counter.UpdatedAt)
 	}
 
 	if counter.ResetedAt.Valid {
