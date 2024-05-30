@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/testcontainers/testcontainers-go"
@@ -76,11 +77,24 @@ func setup() error {
 	}
 
 	// Create counter table
-	_, err = db.Exec(`CREATE TABLE counter (
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS counter (
 		current_value INT NOT NULL,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		reseted_at TIMESTAMP NULL DEFAULT NULL
 	)`)
+	if err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
+
+	// Create historical table
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS historical_counters (
+			counter_id UUID PRIMARY KEY NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			value INT NOT NULL
+		);
+	`)
 	if err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
@@ -145,5 +159,50 @@ func TestGetCounterEmpty(t *testing.T) {
 	}
 	if counter.ResetedAt.Valid {
 		t.Errorf("expected reseted_at to be invalid, got valid")
+	}
+}
+
+func TestUpsertCounterData(t *testing.T) {
+
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Test UpsertCounterData
+	err := UpsertCounterData()
+	if err != nil {
+		t.Fatalf("failed to upsert counter data: %s", err)
+	}
+
+	// Test GetCounter function
+	counter, err := GetCounter()
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 1 {
+		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+
+	// Allow for a small time difference - 1 seconds
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
+
+	// Cleanup table after test
+	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
 	}
 }
