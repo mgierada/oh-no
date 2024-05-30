@@ -162,7 +162,15 @@ func TestGetCounterEmpty(t *testing.T) {
 	}
 }
 
-func TestUpsertCounterData(t *testing.T) {
+func TestUpsertCounterDataTypicalCase(t *testing.T) {
+	// NOTE: Test covers a typical situation where there are some existing rows in the counter table and we simply need to update the counter.
+	// It is expected to update a increment the counter by one and update the updated_at field to NOW().
+
+	// Insert a row into the counter table
+	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, '2024-05-28 12:34:56')`)
+	if ierr != nil {
+		t.Fatalf("failed to insert into table: %s", ierr)
+	}
 
 	// Ensure db_test is not nil
 	if db == nil {
@@ -181,8 +189,8 @@ func TestUpsertCounterData(t *testing.T) {
 		t.Fatalf("failed to get counter: %s", err)
 	}
 
-	if counter.CurrentValue != 1 {
-		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	if counter.CurrentValue != 43 {
+		t.Errorf("expected current_value to be 43, got %d", counter.CurrentValue)
 	}
 
 	// Check updated_at (should be close to current time)
