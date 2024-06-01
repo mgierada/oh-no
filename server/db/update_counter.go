@@ -37,9 +37,7 @@ func UpsertCounterData() error {
 			log.Printf("Error querying counter table.\n %s", err)
 			return fmt.Errorf("❌ Error querying counter table.\n %s", err)
 		}
-
 	} else {
-
 		lastUpdated, err := time.Parse(time.RFC3339Nano, counter.UpdatedAt)
 		if err != nil {
 			tx.Rollback()
@@ -67,7 +65,7 @@ func UpsertCounterData() error {
 		}
 
 		if time.Since(lastUpdated) >= 24*time.Hour {
-			log.Println("24 hours have passed since last update. Resetting counter...")
+			log.Println("24 hours have passed since last update. Incrementing counter...")
 			_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
 			if err != nil {
 				tx.Rollback()

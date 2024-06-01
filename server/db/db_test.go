@@ -52,6 +52,7 @@ func setup() error {
 		WaitingFor: wait.ForListeningPort("5432/tcp"),
 	}
 	var err error
+
 	postgresContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          true,
@@ -64,6 +65,7 @@ func setup() error {
 	if err != nil {
 		return fmt.Errorf("failed to get container host: %w", err)
 	}
+
 	port, err := postgresContainer.MappedPort(ctx, "5432")
 	if err != nil {
 		return fmt.Errorf("failed to get container port: %w", err)
@@ -116,7 +118,6 @@ func TestGetCounter(t *testing.T) {
 		t.Fatalf("failed to insert into table: %s", err)
 	}
 
-	// Test GetCounter function
 	counter, err := GetCounter()
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
@@ -145,7 +146,6 @@ func TestGetCounterEmpty(t *testing.T) {
 		t.Fatalf("failed to clean up table: %s", err)
 	}
 
-	// Test GetCounter function
 	counter, err := GetCounter()
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
@@ -162,7 +162,9 @@ func TestGetCounterEmpty(t *testing.T) {
 	}
 }
 
-// NOTE: Test covers a situation where there are no existing rows in the counter table and we simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql null string
+// NOTE: Test covers a situation where there are no existing rows in the counter table and we
+// simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql
+// null string
 func TestUpsertCounterData(t *testing.T) {
 	// Ensure db_test is not nil
 	if db == nil {
@@ -209,10 +211,10 @@ func TestUpsertCounterData(t *testing.T) {
 	}
 }
 
-// NOTE: Test covers a typical situation where there are some existing rows in the counter table and we simply need to update the counter.
-// It is expected to update a increment the counter by one and update the updated_at field to NOW().
+// NOTE: Test covers a typical situation where there are some existing rows in the counter table
+// and we simply need to update the counter. It is expected to update a increment the counter by
+// one and update the updated_at field to NOW().
 func TestUpsertCounterDataTypicalCase(t *testing.T) {
-
 	// Insert a row into the counter table
 	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, '2024-05-28 12:34:56')`)
 	if ierr != nil {
@@ -230,7 +232,6 @@ func TestUpsertCounterDataTypicalCase(t *testing.T) {
 		t.Fatalf("failed to upsert counter data: %s", err)
 	}
 
-	// Test GetCounter function
 	counter, err := GetCounter()
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
@@ -287,7 +288,6 @@ func TestUpsertCounterDataTimeDidNotPass(t *testing.T) {
 		t.Fatalf("failed to upsert counter data: %s", err)
 	}
 
-	// Test GetCounter function
 	counter, err := GetCounter()
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
@@ -304,6 +304,60 @@ func TestUpsertCounterDataTimeDidNotPass(t *testing.T) {
 
 	if counter.ResetedAt.Valid {
 		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
+
+	// Cleanup table after test
+	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
+	}
+}
+
+// NOTE: Counter has some value, resetting, should be zero now.
+func TestResetCounter(t *testing.T) {
+
+	_, err := db.Exec(`INSERT INTO counter (current_value, updated_at, reseted_at) VALUES (42, '2024-05-30 12:34:56', '2024-05-01 12:00:00')`)
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s", err)
+	}
+
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Test ResetCounter
+	lastValue, err := ResetCounter()
+	if err != nil {
+		t.Fatalf("failed to reset counter data: %s", err)
+	}
+
+	if lastValue != 42 {
+		t.Errorf("expected last value to be 42, got %d", lastValue)
+	}
+
+	counter, err := GetCounter()
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 0 {
+		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+
+	// Allow for a small time difference - 1 seconds
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	if !counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be a valid sql null string, got %v", counter.ResetedAt)
 	}
 
 	// Cleanup table after test
