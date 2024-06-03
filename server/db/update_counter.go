@@ -39,7 +39,13 @@ func upsertCounterData(tableName string) error {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found in counter table. Inserting new row.")
-			_, err = tx.Exec("INSERT INTO counter (current_value, updated_at) VALUES (1, NOW())")
+
+			insertCounterQuery := fmt.Sprintf(`
+				INSERT INTO %s (current_value, updated_at)
+				VALUES (1, NOW())
+			`, tableName)
+
+			_, err = tx.Exec(insertCounterQuery)
 			if err != nil {
 				tx.Rollback()
 				log.Printf("Error inserting new counter row.\n %s", err)
@@ -48,9 +54,10 @@ func upsertCounterData(tableName string) error {
 
 		} else {
 			tx.Rollback()
-			log.Printf("Error querying counter table.\n %s", err)
-			return fmt.Errorf("❌ Error querying counter table.\n %s", err)
+			log.Printf("Error querying %s table.\n %s", tableName, err)
+			return fmt.Errorf("❌ Error querying %s table.\n %s", tableName, err)
 		}
+
 	} else {
 		lastUpdated, err := time.Parse(time.RFC3339Nano, counter.UpdatedAt)
 		if err != nil {
@@ -98,6 +105,7 @@ func upsertCounterData(tableName string) error {
 	return nil
 }
 
+// TODO: Refactor this function to improve error handling and readability
 func SetCounter(value int) error {
 	tx, err := db.Begin()
 	if err != nil {
