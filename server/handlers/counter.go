@@ -33,7 +33,7 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /increment request")
 	switch r.Method {
 	case "POST":
-		db.UpsertCounterData()
+		db.UpdateCounter()
 		response := ServerResponse{Message: "Counter incremented successfully"}
 		MarshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Counter incremented successfully")

@@ -165,14 +165,14 @@ func TestGetCounterEmpty(t *testing.T) {
 // NOTE: Test covers a situation where there are no existing rows in the counter table and we
 // simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql
 // null string
-func TestUpsertCounterData(t *testing.T) {
+func TestUpdateCounter(t *testing.T) {
 	// Ensure db_test is not nil
 	if db == nil {
 		t.Fatal("db is nil")
 	}
 
-	// Call the UpsertCounterData function
-	err := UpsertCounterData()
+	// Call the UpdateCounter function
+	err := UpdateCounter()
 	if err != nil {
 		t.Fatalf("failed to upsert counter data: %s", err)
 	}
@@ -214,7 +214,7 @@ func TestUpsertCounterData(t *testing.T) {
 // NOTE: Test covers a typical situation where there are some existing rows in the counter table
 // and we simply need to update the counter. It is expected to update a increment the counter by
 // one and update the updated_at field to NOW().
-func TestUpsertCounterDataTypicalCase(t *testing.T) {
+func TestUpdateCounterTypicalCase(t *testing.T) {
 	// Insert a row into the counter table
 	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, '2024-05-28 12:34:56')`)
 	if ierr != nil {
@@ -226,8 +226,8 @@ func TestUpsertCounterDataTypicalCase(t *testing.T) {
 		t.Fatal("db is nil")
 	}
 
-	// Test UpsertCounterData
-	err := UpsertCounterData()
+	// Test UpdateCounter
+	err := UpdateCounter()
 	if err != nil {
 		t.Fatalf("failed to upsert counter data: %s", err)
 	}
@@ -266,7 +266,7 @@ func TestUpsertCounterDataTypicalCase(t *testing.T) {
 // NOTE: Test covers a situation where there are some existing rows in the counter table and we
 // cannot update the counter because 24h did not pass since the last update.
 // It is expected that no counter is updated.
-func TestUpsertCounterDataTimeDidNotPass(t *testing.T) {
+func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 	// Check updated_at (should be close to current time)
 	updatedLessThan24hAgo := time.Now().UTC().Add(-23 * time.Hour)
 	parsedUpdatedLessThan24hAgo := updatedLessThan24hAgo.Format(time.RFC3339)
@@ -282,8 +282,8 @@ func TestUpsertCounterDataTimeDidNotPass(t *testing.T) {
 		t.Fatal("db is nil")
 	}
 
-	// Test UpsertCounterData
-	err := UpsertCounterData()
+	// Test UpdateCounter
+	err := UpdateCounter()
 	if err != nil {
 		t.Fatalf("failed to upsert counter data: %s", err)
 	}

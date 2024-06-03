@@ -13,7 +13,12 @@ type Counter struct {
 	ResetedAt    sql.NullString
 }
 
-func UpsertCounterData() error {
+func upsertCounterData(tableName string) error {
+
+	if tableName == "" {
+		return fmt.Errorf("❌ Error upserting counter data. Table name cannot be empty.")
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("❌ Error starting transaction.\n %s", err)
@@ -21,7 +26,16 @@ func UpsertCounterData() error {
 
 	var counter Counter
 
-	err = tx.QueryRow("SELECT current_value, updated_at, reseted_at FROM counter LIMIT 1 FOR UPDATE").Scan(&counter.CurrentValue, &counter.UpdatedAt, &counter.ResetedAt)
+	upsertCounterQuery := fmt.Sprintf(`
+		SELECT 
+			current_value, updated_at, reseted_at 
+		FROM 
+			%s
+		LIMIT 1 
+		FOR UPDATE
+	`, tableName)
+
+	err = tx.QueryRow(upsertCounterQuery).Scan(&counter.CurrentValue, &counter.UpdatedAt, &counter.ResetedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found in counter table. Inserting new row.")
@@ -122,4 +136,12 @@ func SetCounter(value int) error {
 	}
 	log.Println("✅ Transaction committed successfully")
 	return nil
+}
+
+func UpdateCounter() error {
+	return upsertCounterData("counter")
+}
+
+func UpdateOhnoCounter() error {
+	return upsertCounterData("ohno_counter")
 }

@@ -23,7 +23,7 @@ func runBackgroundTask(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			err := db.UpsertCounterData()
+			err := db.UpdateCounter()
 			if err != nil {
 				log.Println(err)
 			}
