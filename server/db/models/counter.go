@@ -10,6 +10,7 @@ func CreateCounterTableIfNotExists(db *sql.DB) {
 	createTableQuery := `
 		CREATE TABLE IF NOT EXISTS counter (
 			current_value INT NOT NULL,
+			is_locked BOOLEAN NOT NULL DEFAULT FALSE,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			reseted_at TIMESTAMP NULL DEFAULT NULL
 		);

@@ -18,6 +18,17 @@ func GetCounter(w http.ResponseWriter, r *http.Request) {
 	MarshalJson(w, http.StatusOK, counter)
 }
 
+func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received /ohno-counter request\n")
+
+	counter, err := db.GetOhnoCounter()
+	if err != nil {
+		log.Fatalf("❌ Error retrieving ohno_counter data.\n %s", err)
+	}
+
+	MarshalJson(w, http.StatusOK, counter)
+}
+
 func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received GET /historical request\n")
 

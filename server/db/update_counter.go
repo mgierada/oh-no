@@ -11,6 +11,7 @@ type Counter struct {
 	CurrentValue int
 	UpdatedAt    string
 	ResetedAt    sql.NullString
+	IsLocked     bool
 }
 
 func upsertCounterData(tableName string) error {

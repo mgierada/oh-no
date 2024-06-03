@@ -10,6 +10,7 @@ func CreateOhnoCounterTableIfNotExists(db *sql.DB) {
 	createTableQuery := `
 		CREATE TABLE IF NOT EXISTS ohno_counter (
 			current_value INT NOT NULL,
+			is_locked BOOLEAN NOT NULL DEFAULT TRUE,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			reseted_at TIMESTAMP NULL DEFAULT NULL
 		);
@@ -31,7 +32,7 @@ func CreateOhnoCounterTableIfNotExists(db *sql.DB) {
 	`
 	_, err = db.Exec(createTriggerFunctionQuery)
 	if err != nil {
-		log.Fatalf("❌ Error creating trigger function for ohno counter table.\n %s", err)
+		log.Fatalf("❌ Error creating trigger function for ohno_counter table.\n %s", err)
 	}
 
 	// Create the trigger conditionally
