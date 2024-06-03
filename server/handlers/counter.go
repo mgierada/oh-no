@@ -10,7 +10,7 @@ import (
 func GetCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /counter request\n")
 
-	counter, err := db.GetCounter()
+	counter, err := db.GetCounter("counter")
 	if err != nil {
 		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
 	}
@@ -21,7 +21,7 @@ func GetCounter(w http.ResponseWriter, r *http.Request) {
 func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /ohno-counter request\n")
 
-	counter, err := db.GetOhnoCounter()
+	counter, err := db.GetCounter("ohno_counter")
 	if err != nil {
 		log.Fatalf("❌ Error retrieving ohno_counter data.\n %s", err)
 	}
@@ -44,27 +44,45 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /increment request")
 	switch r.Method {
 	case "POST":
-		db.UpdateCounter()
-		isCounterLocked := isCounterLocked()
-		isOhnoCounterLocked := isOhnoCounterLocked()
-		log.Printf("🔒 Counter locked: %t, Ohno Counter locked: %t", isCounterLocked, isOhnoCounterLocked)
-		response := ServerResponse{Message: "Counter incremented successfully"}
-		MarshalJson(w, http.StatusOK, response)
-		log.Println("🟢 Counter incremented successfully")
+
+		if !IsCounterLocked() && !IsOhnoCounterLocked() {
+			log.Printf("🤔 Both counters are unlocked. Something went wrong.")
+			errResponse := ServerResponse{Message: "Both counters are unlocked. Something went wrong."}
+			MarshalJson(w, http.StatusInternalServerError, errResponse)
+			log.Println("⁉️ Both counters are unlocked. Something went wrong.")
+			return
+		}
+
+		if IsCounterLocked() && IsOhnoCounterLocked() {
+			log.Printf("🤔 Both counters are locked. Something went wrong.")
+			errResponse := ServerResponse{Message: "Both counters are locked. Something went wrong."}
+			MarshalJson(w, http.StatusInternalServerError, errResponse)
+			log.Println("⁉️ Both counters are locked. Something went wrong.")
+			return
+		}
+
+		if IsOhnoCounterLocked() {
+			log.Printf("😀 Ohno Counter is locked. Proceeding with incrementing counter. Another happy day.")
+			db.UpdateCounter()
+			response := ServerResponse{Message: "Counter incremented successfully"}
+			MarshalJson(w, http.StatusOK, response)
+			log.Println("🟢 Counter incremented successfully")
+		}
+
+		if IsCounterLocked() {
+			log.Printf("🤮 Counter is locked. Proceeding with incrementing ohno counter. Illness continues.")
+			db.UpdateOhnoCounter()
+			response := ServerResponse{Message: "Ohno counter incremented successfully"}
+			MarshalJson(w, http.StatusOK, response)
+			log.Println("🟢 Ohno counter incremented successfully")
+		}
+
 	default:
 		log.Printf("❌ Only POST method is allowed")
 		errResponse := ServerResponse{Message: "Only POST method is allowed"}
 		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
-}
-
-func isCounterLocked() bool {
-	return db.GetCounterLocked()
-}
-
-func isOhnoCounterLocked() bool {
-	return db.GetOhnoCounterLocked()
 }
 
 type ManualCouterIncrementRequest struct {

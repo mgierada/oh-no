@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"server/db"
 )
 
 func MarshalJson(w http.ResponseWriter, statusCode int, data interface{}) {
@@ -16,4 +17,21 @@ func MarshalJson(w http.ResponseWriter, statusCode int, data interface{}) {
 		return
 	}
 	w.Write(jsonData)
+}
+
+func IsCounterLocked() bool {
+	counter, err := db.GetCounter("counter")
+
+	if err != nil {
+		return false
+	}
+	return counter.IsLocked
+}
+
+func IsOhnoCounterLocked() bool {
+	counter, err := db.GetCounter("ohno_counter")
+	if err != nil {
+		return false
+	}
+	return counter.IsLocked
 }
