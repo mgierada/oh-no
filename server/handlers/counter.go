@@ -63,7 +63,15 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 
 		if IsOhnoCounterLocked() {
 			log.Printf("😀 Ohno Counter is locked. Proceeding with incrementing counter. Another happy day.")
-			db.UpdateCounter()
+			isUpdated := db.UpdateCounter()
+			log.Printf("isUpdated: %v", isUpdated)
+
+			if !isUpdated {
+				errResponse := ServerResponse{Message: "Counter not incremented. Conditions not met."}
+				MarshalJson(w, http.StatusOK, errResponse)
+				return
+			}
+
 			response := ServerResponse{Message: "Counter incremented successfully"}
 			MarshalJson(w, http.StatusOK, response)
 			log.Println("🟢 Counter incremented successfully")
@@ -71,7 +79,14 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 
 		if IsCounterLocked() {
 			log.Printf("🤮 Counter is locked. Proceeding with incrementing ohno counter. Illness continues.")
-			db.UpdateOhnoCounter()
+			isUpdated := db.UpdateOhnoCounter()
+
+			if !isUpdated {
+				errResponse := ServerResponse{Message: "Counter not incremented. Conditions not met."}
+				MarshalJson(w, http.StatusOK, errResponse)
+				return
+			}
+
 			response := ServerResponse{Message: "Ohno counter incremented successfully"}
 			MarshalJson(w, http.StatusOK, response)
 			log.Println("🟢 Ohno counter incremented successfully")

@@ -23,9 +23,9 @@ func runBackgroundTask(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			err := db.UpdateCounter()
-			if err != nil {
-				log.Println(err)
+			isUpdated := db.UpdateCounter()
+			if !isUpdated {
+				log.Printf("❌ Counter not incremented. Conditions not met.")
 			}
 		case <-ctx.Done():
 			log.Println("🛑 Background task stopped")

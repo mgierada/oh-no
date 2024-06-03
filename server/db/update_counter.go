@@ -14,16 +14,29 @@ type Counter struct {
 	IsLocked     bool
 }
 
-func upsertCounterData(tableName string) error {
-
+func upsertCounterData(tableName string) (bool, error) {
 	if tableName == "" {
-		return fmt.Errorf("❌ Error upserting counter data. Table name cannot be empty.")
+		return false, fmt.Errorf("❌ Error upserting counter data. Table name cannot be empty.")
 	}
 
 	tx, err := db.Begin()
 	if err != nil {
-		return fmt.Errorf("❌ Error starting transaction.\n %s", err)
+		return false, fmt.Errorf("❌ Error starting transaction.\n %s", err)
 	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		} else if err != nil {
+			tx.Rollback()
+		} else {
+			err = tx.Commit()
+			if err != nil {
+				log.Printf("❌ Error committing transaction.\n %s", err)
+			}
+		}
+	}()
 
 	var counter Counter
 
@@ -48,62 +61,47 @@ func upsertCounterData(tableName string) error {
 
 			_, err = tx.Exec(insertCounterQuery)
 			if err != nil {
-				tx.Rollback()
-				log.Printf("Error inserting new counter row.\n %s", err)
-				return fmt.Errorf("❌ Error inserting new counter row.\n %s", err)
+				return false, fmt.Errorf("❌ Error inserting new counter row.\n %s", err)
 			}
 
 		} else {
-			tx.Rollback()
-			log.Printf("Error querying %s table.\n %s", tableName, err)
-			return fmt.Errorf("❌ Error querying %s table.\n %s", tableName, err)
+			return false, fmt.Errorf("❌ Error querying %s table.\n %s", tableName, err)
 		}
 
 	} else {
 		lastUpdated, err := time.Parse(time.RFC3339Nano, counter.UpdatedAt)
 		if err != nil {
-			tx.Rollback()
-			log.Printf("Error parsing updated_at timestamp.\n %s", err)
-			return fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
+			return false, fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
 		}
 
 		if counter.ResetedAt.Valid {
 			lastReseted, err := time.Parse(time.RFC3339Nano, counter.ResetedAt.String)
 			if err != nil {
-				tx.Rollback()
-				log.Printf("Error parsing reseted_at timestamp.\n %s", err)
-				return fmt.Errorf("❌ Error parsing updated_at timestamp.\n %s", err)
+				return false, fmt.Errorf("❌ Error parsing reseted_at timestamp.\n %s", err)
 			}
 
 			if lastReseted.After(lastUpdated) || lastReseted.Equal(lastUpdated) {
 				log.Println("Counter was reseted. lastReseted <= lastUpdated")
 				_, err = tx.Exec("UPDATE counter SET current_value = 1, updated_at = NOW()")
 				if err != nil {
-					tx.Rollback()
-					log.Printf("Error updating counter.\n %s", err)
-					return fmt.Errorf("❌ Error updating counter row.\n %s", err)
+					return false, fmt.Errorf("❌ Error updating counter row.\n %s", err)
 				}
 			}
 		}
 
-		if time.Since(lastUpdated) >= 24*time.Hour {
-			log.Println("24 hours have passed since last update. Incrementing counter...")
-			_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
-			if err != nil {
-				tx.Rollback()
-				log.Printf("Error updating counter.\n %s", err)
-				return fmt.Errorf("❌ Error updating counter row.\n %s", err)
-			}
+		if time.Since(lastUpdated) < 24*time.Hour {
+			log.Println("🙅 24 hours have not passed since the last update. Counter not increased...")
+			return false, nil
+		}
+
+		_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
+
+		if err != nil {
+			return false, fmt.Errorf("❌ Error updating counter row.\n %s", err)
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("❌ Error committing transaction.\n %s", err)
-	}
-
-	log.Println("✅ Transaction committed successfully")
-	return nil
+	return true, err
 }
 
 // TODO: Refactor this function to improve error handling and readability
@@ -147,10 +145,32 @@ func SetCounter(value int) error {
 	return nil
 }
 
-func UpdateCounter() error {
-	return upsertCounterData("counter")
+func UpdateCounter() bool {
+	isUpdated, err := upsertCounterData("counter")
+	log.Printf("isUpdated: %v", isUpdated)
+	log.Printf("err: %v", err)
+
+	if err != nil {
+		log.Println("❌ Error updating counter.\n %s", err)
+	}
+
+	if !isUpdated {
+		log.Printf("❌ Counter not incremented. Conditions not met.")
+	}
+
+	return isUpdated
 }
 
-func UpdateOhnoCounter() error {
-	return upsertCounterData("ohno_counter")
+func UpdateOhnoCounter() bool {
+	isUpdated, err := upsertCounterData("ohno_counter")
+
+	if err != nil {
+		log.Println("❌ Error updating counter.\n %s", err)
+	}
+
+	if !isUpdated {
+		log.Printf("❌ Counter not incremented. Conditions not met.")
+	}
+
+	return isUpdated
 }
