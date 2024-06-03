@@ -60,9 +60,11 @@ func upsertCounterData(tableName string) (bool, error) {
 			`, tableName)
 
 			_, err = tx.Exec(insertCounterQuery)
+
 			if err != nil {
 				return false, fmt.Errorf("❌ Error inserting new counter row.\n %s", err)
 			}
+			return true, nil
 
 		} else {
 			return false, fmt.Errorf("❌ Error querying %s table.\n %s", tableName, err)
@@ -147,11 +149,9 @@ func SetCounter(value int) error {
 
 func UpdateCounter() bool {
 	isUpdated, err := upsertCounterData("counter")
-	log.Printf("isUpdated: %v", isUpdated)
-	log.Printf("err: %v", err)
 
 	if err != nil {
-		log.Println("❌ Error updating counter.\n %s", err)
+		log.Printf("❌ Error updating counter.\n %s", err)
 	}
 
 	if !isUpdated {
@@ -165,7 +165,7 @@ func UpdateOhnoCounter() bool {
 	isUpdated, err := upsertCounterData("ohno_counter")
 
 	if err != nil {
-		log.Println("❌ Error updating counter.\n %s", err)
+		log.Printf("❌ Error updating counter.\n %s", err)
 	}
 
 	if !isUpdated {

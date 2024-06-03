@@ -64,7 +64,6 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 		if IsOhnoCounterLocked() {
 			log.Printf("😀 Ohno Counter is locked. Proceeding with incrementing counter. Another happy day.")
 			isUpdated := db.UpdateCounter()
-			log.Printf("isUpdated: %v", isUpdated)
 
 			if !isUpdated {
 				errResponse := ServerResponse{Message: "Counter not incremented. Conditions not met."}

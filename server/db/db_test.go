@@ -81,6 +81,7 @@ func setup() error {
 	// Create counter table
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS counter (
 		current_value INT NOT NULL,
+		is_locked BOOLEAN NOT NULL DEFAULT FALSE,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		reseted_at TIMESTAMP NULL DEFAULT NULL
 	)`)
@@ -113,18 +114,26 @@ func teardown() error {
 
 func TestGetCounter(t *testing.T) {
 	// Insert a row into the counter table
-	_, err := db.Exec(`INSERT INTO counter (current_value, updated_at, reseted_at) VALUES (42, '2024-05-30 12:34:56', '2024-05-01 12:00:00')`)
+	_, err := db.Exec(`
+		INSERT INTO 
+			counter (current_value, is_locked, updated_at, reseted_at) 
+		VALUES 
+			(42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00')
+	`)
 	if err != nil {
 		t.Fatalf("failed to insert into table: %s", err)
 	}
 
-	counter, err := GetCounter()
+	counter, err := GetCounter("counter")
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
 
 	if counter.CurrentValue != 42 {
 		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
+	}
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
 	if counter.UpdatedAt != "2024-05-30T12:34:56Z" {
 		t.Errorf("expected updated_at to be '2024-05-30T12:34:56Z', got %s", counter.UpdatedAt)
@@ -146,13 +155,16 @@ func TestGetCounterEmpty(t *testing.T) {
 		t.Fatalf("failed to clean up table: %s", err)
 	}
 
-	counter, err := GetCounter()
+	counter, err := GetCounter("counter")
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
 
 	if counter.CurrentValue != 0 {
 		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
+	}
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
 	if counter.UpdatedAt != "" {
 		t.Errorf("expected updated_at to be '', got %s", counter.UpdatedAt)
@@ -172,13 +184,14 @@ func TestUpdateCounter(t *testing.T) {
 	}
 
 	// Call the UpdateCounter function
-	err := UpdateCounter()
-	if err != nil {
-		t.Fatalf("failed to upsert counter data: %s", err)
+	isUpdated := UpdateCounter()
+
+	if !isUpdated {
+		t.Errorf("expected isUpdated to be true, got %v", isUpdated)
 	}
 
 	// Test GetCounter function
-	counter, err := GetCounter()
+	counter, err := GetCounter("counter")
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -205,6 +218,10 @@ func TestUpdateCounter(t *testing.T) {
 		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
 	}
 
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+
 	// Cleanup table after test
 	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
 		t.Fatalf("failed to clean up table: %s", err)
@@ -216,7 +233,12 @@ func TestUpdateCounter(t *testing.T) {
 // one and update the updated_at field to NOW().
 func TestUpdateCounterTypicalCase(t *testing.T) {
 	// Insert a row into the counter table
-	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, '2024-05-28 12:34:56')`)
+	_, ierr := db.Exec(`
+		INSERT INTO 
+			counter (current_value, is_locked, updated_at) 
+		VALUES 
+			(42, false, '2024-05-28 12:34:56')
+	`)
 	if ierr != nil {
 		t.Fatalf("failed to insert into table: %s", ierr)
 	}
@@ -227,12 +249,13 @@ func TestUpdateCounterTypicalCase(t *testing.T) {
 	}
 
 	// Test UpdateCounter
-	err := UpdateCounter()
-	if err != nil {
-		t.Fatalf("failed to upsert counter data: %s", err)
+	isUpdated := UpdateCounter()
+
+	if !isUpdated {
+		t.Errorf("expected isUpdated to be true, got %v", isUpdated)
 	}
 
-	counter, err := GetCounter()
+	counter, err := GetCounter("counter")
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -257,6 +280,10 @@ func TestUpdateCounterTypicalCase(t *testing.T) {
 		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
 	}
 
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+
 	// Cleanup table after test
 	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
 		t.Fatalf("failed to clean up table: %s", err)
@@ -272,7 +299,11 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 	parsedUpdatedLessThan24hAgo := updatedLessThan24hAgo.Format(time.RFC3339)
 
 	// Insert a row into the counter table
-	_, ierr := db.Exec(`INSERT INTO counter (current_value, updated_at) VALUES (42, $1)`, parsedUpdatedLessThan24hAgo)
+	_, ierr := db.Exec(`
+		INSERT INTO
+			counter (current_value, is_locked, updated_at)
+		VALUES 
+			(42, false,  $1)`, parsedUpdatedLessThan24hAgo)
 	if ierr != nil {
 		t.Fatalf("failed to insert into table: %s", ierr)
 	}
@@ -283,18 +314,23 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 	}
 
 	// Test UpdateCounter
-	err := UpdateCounter()
-	if err != nil {
-		t.Fatalf("failed to upsert counter data: %s", err)
+	isUpdated := UpdateCounter()
+
+	if isUpdated {
+		t.Errorf("expected isUpdated to be false, got %v", isUpdated)
 	}
 
-	counter, err := GetCounter()
+	counter, err := GetCounter("counter")
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
 
 	if counter.CurrentValue != 42 {
 		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
+	}
+
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
 
 	// Check updated_at (should be intact)
@@ -315,7 +351,10 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 // NOTE: Counter has some value, resetting, should be zero now.
 func TestResetCounter(t *testing.T) {
 
-	_, err := db.Exec(`INSERT INTO counter (current_value, updated_at, reseted_at) VALUES (42, '2024-05-30 12:34:56', '2024-05-01 12:00:00')`)
+	_, err := db.Exec(`
+		INSERT INTO counter (current_value, is_locked, updated_at, reseted_at) 
+		VALUES (42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00')
+	`)
 	if err != nil {
 		t.Fatalf("failed to insert into table: %s", err)
 	}
@@ -335,13 +374,17 @@ func TestResetCounter(t *testing.T) {
 		t.Errorf("expected last value to be 42, got %d", lastValue)
 	}
 
-	counter, err := GetCounter()
+	counter, err := GetCounter("counter")
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
 
 	if counter.CurrentValue != 0 {
 		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
+	}
+
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
 
 	// Check updated_at (should be close to current time)

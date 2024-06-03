@@ -21,3 +21,9 @@ go test ./... -v
 ```shell
 go build
 ```
+
+# How to add dependencies
+
+```shell
+go get -t ./...
+```
