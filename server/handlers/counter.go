@@ -45,6 +45,9 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		db.UpdateCounter()
+		isCounterLocked := isCounterLocked()
+		isOhnoCounterLocked := isOhnoCounterLocked()
+		log.Printf("🔒 Counter locked: %t, Ohno Counter locked: %t", isCounterLocked, isOhnoCounterLocked)
 		response := ServerResponse{Message: "Counter incremented successfully"}
 		MarshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Counter incremented successfully")
@@ -54,6 +57,14 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
+}
+
+func isCounterLocked() bool {
+	return db.GetCounterLocked()
+}
+
+func isOhnoCounterLocked() bool {
+	return db.GetOhnoCounterLocked()
 }
 
 type ManualCouterIncrementRequest struct {

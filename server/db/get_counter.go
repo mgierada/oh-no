@@ -42,3 +42,19 @@ func GetCounter() (Counter, error) {
 func GetOhnoCounter() (Counter, error) {
 	return getCounter("ohno_counter")
 }
+
+func GetCounterLocked() bool {
+	counter, err := GetCounter()
+	if err != nil {
+		return false
+	}
+	return counter.IsLocked
+}
+
+func GetOhnoCounterLocked() bool {
+	counter, err := GetOhnoCounter()
+	if err != nil {
+		return false
+	}
+	return counter.IsLocked
+}
