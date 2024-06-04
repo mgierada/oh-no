@@ -29,6 +29,7 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 		response := ServerResponse{Message: "Oh No! Event recorded"}
 		MarshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Oh No! Event recorded")
+
 	default:
 		log.Printf("❌ Only POST method is allowed")
 		errResponse := ServerResponse{Message: "Only POST method is allowed"}

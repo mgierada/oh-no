@@ -14,22 +14,46 @@ func ResetCounter() (int, error) {
 	var counter Counter
 	var lastValue int
 
-	err = tx.QueryRow("SELECT current_value, updated_at, reseted_at FROM counter LIMIT 1 FOR UPDATE").Scan(&counter.CurrentValue, &counter.UpdatedAt, &counter.ResetedAt)
+	query := (`
+		SELECT 
+			current_value, is_locked, updated_at, reseted_at 
+		FROM 
+			counter 
+		LIMIT 1 FOR UPDATE
+	`)
+
+	err = tx.QueryRow(query).Scan(&counter.CurrentValue, &counter.IsLocked, &counter.UpdatedAt, &counter.ResetedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			_, err = tx.Exec("INSERT INTO counter (current_value, updated_at, reseted_at) VALUES (0, NOW(), NOW())")
+			insertQuery := (`
+				INSERT INTO counter 
+					(current_value, is_locked, updated_at, reseted_at) 
+				VALUES 
+					(0, false, NOW(), NOW())
+			`)
+
+			_, err = tx.Exec(insertQuery)
+
 			if err != nil {
 				tx.Rollback()
 				return -1, fmt.Errorf("❌ Error inserting new counter row.\n %s", err)
 			}
+
 		} else {
 			tx.Rollback()
 			return -1, fmt.Errorf("❌ Error querying counter table.\n %s", err)
 		}
+
 	} else {
 		lastValue = counter.CurrentValue
-		_, err = tx.Exec("UPDATE counter SET current_value = 0, updated_at = NOW(), reseted_at = NOW()")
+		updateQuery := (`
+			UPDATE
+				counter 
+			SET 
+				current_value = 0, updated_at = NOW(), reseted_at = NOW()
+		`)
+		_, err = tx.Exec(updateQuery)
 		if err != nil {
 			tx.Rollback()
 			return -1, fmt.Errorf("❌ Error updating counter row.\n %s", err)
