@@ -14,18 +14,37 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /ohno request")
 	switch r.Method {
 	case "POST":
-		last_value, ok := db.ResetCounter()
-		if ok != nil {
-			log.Printf("❌ Error resetting counter.\n %s", ok)
+		last_value, err := db.ResetCounter()
+		if err != nil {
+			log.Printf("❌ Error resetting counter.\n %s", err)
 			http.Error(w, "Error resetting counter.", http.StatusInternalServerError)
 			return
 		}
-		ok = db.CreateHistoricalCounter(last_value)
-		if ok != nil {
-			log.Printf("❌ Error creating historical counter.\n %s", ok)
+
+		_, err = db.LockCounter("counter")
+		log.Printf("🔓 Locking counter")
+
+		if err != nil {
+			log.Printf("❌ Error locking counter.\n %s", err)
+			http.Error(w, "Error locking counter.", http.StatusInternalServerError)
+			return
+		}
+
+		_, err = db.UnlockCounter("ohno_counter")
+		log.Printf("🔓 Unlocking ohno counter")
+		if err != nil {
+			log.Printf("❌ Error unlocking ohno counter.\n %s", err)
+			http.Error(w, "Error unlocking ohno counter.", http.StatusInternalServerError)
+			return
+		}
+
+		err = db.CreateHistoricalCounter(last_value)
+		if err != nil {
+			log.Printf("❌ Error creating historical counter.\n %s", err)
 			http.Error(w, "Error creating historical counter.", http.StatusInternalServerError)
 			return
 		}
+
 		response := ServerResponse{Message: "Oh No! Event recorded"}
 		MarshalJson(w, http.StatusOK, response)
 		log.Println("🟢 Oh No! Event recorded")
