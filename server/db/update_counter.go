@@ -50,14 +50,14 @@ func upsertCounterData(tableName string) (bool, error) {
 
 	upsertCounterQuery := fmt.Sprintf(`
 		SELECT 
-			current_value, updated_at, reseted_at 
+			current_value, is_locked, updated_at, reseted_at 
 		FROM 
 			%s
 		LIMIT 1 
 		FOR UPDATE
 	`, tableName)
 
-	err = tx.QueryRow(upsertCounterQuery).Scan(&counter.CurrentValue, &counter.UpdatedAt, &counter.ResetedAt)
+	err = tx.QueryRow(upsertCounterQuery).Scan(&counter.CurrentValue, &counter.IsLocked, &counter.UpdatedAt, &counter.ResetedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Println("No rows found in counter table. Inserting new row.")
@@ -92,7 +92,12 @@ func upsertCounterData(tableName string) (bool, error) {
 
 			if lastReseted.After(lastUpdated) || lastReseted.Equal(lastUpdated) {
 				log.Println("Counter was reseted. lastReseted <= lastUpdated")
-				_, err = tx.Exec("UPDATE counter SET current_value = 1, updated_at = NOW()")
+				updateQuery := fmt.Sprintf(`
+					UPDATE %s 
+					SET 
+						current_value = 1, updated_at = NOW()
+				`, tableName)
+				_, err = tx.Exec(updateQuery)
 				if err != nil {
 					return false, fmt.Errorf("❌ Error updating counter row.\n %s", err)
 				}
@@ -104,7 +109,12 @@ func upsertCounterData(tableName string) (bool, error) {
 			return false, nil
 		}
 
-		_, err = tx.Exec("UPDATE counter SET current_value = current_value + 1, updated_at = NOW()")
+		updateQuery := fmt.Sprintf(`
+			UPDATE %s 
+			SET current_value = current_value + 1, updated_at = NOW()
+		`, tableName)
+
+		_, err = tx.Exec(updateQuery)
 
 		if err != nil {
 			return false, fmt.Errorf("❌ Error updating counter row.\n %s", err)
