@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"server/utils"
 	"testing"
 	"time"
 
@@ -78,30 +79,43 @@ func setup() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Create counter table
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS counter (
+	createCounterTableForTest(db, utils.TableInstance.Counter)
+	createCounterTableForTest(db, utils.TableInstance.OhnoCounter)
+	createHistoricalCounterForTest(db, utils.TableInstance.HistoricalCounter)
+	createHistoricalCounterForTest(db, utils.TableInstance.HistoricalOhnoCounter)
+
+	return nil
+}
+
+func createCounterTableForTest(db *sql.DB, tableName string) error {
+	var err error
+	rawCreateQuery := `CREATE TABLE IF NOT EXISTS %s (
 		current_value INT NOT NULL,
 		is_locked BOOLEAN NOT NULL DEFAULT FALSE,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		reseted_at TIMESTAMP NULL DEFAULT NULL
-	)`)
+	);`
+	createQuery := fmt.Sprintf(rawCreateQuery, tableName)
+	_, err = db.Exec(createQuery)
 	if err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
+		return fmt.Errorf("failed to create table %s: %w", tableName, err)
 	}
+	return nil
+}
 
-	// Create historical table
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS historical_counters (
+func createHistoricalCounterForTest(db *sql.DB, tableName string) error {
+	var err error
+	rawCreateQuery := `CREATE TABLE IF NOT EXISTS %s (
 			counter_id UUID PRIMARY KEY NOT NULL,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			value INT NOT NULL
-		);
-	`)
+	);`
+	createQuery := fmt.Sprintf(rawCreateQuery, tableName)
+	_, err = db.Exec(createQuery)
 	if err != nil {
-		return fmt.Errorf("failed to create table: %w", err)
+		return fmt.Errorf("failed to create table %s: %w", tableName, err)
 	}
-
 	return nil
 }
 
