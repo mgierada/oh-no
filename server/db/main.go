@@ -48,4 +48,5 @@ func Connect() {
 	models.CreateCounterTableIfNotExists(db)
 	models.CreateHistoricalCountersTableIfNotExists(db)
 	models.CreateOhnoCounterTableIfNotExists(db)
+	models.CreateHistoricalOhnoCountersTableIfNotExists(db)
 }
