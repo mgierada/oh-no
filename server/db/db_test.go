@@ -128,17 +128,19 @@ func teardown() error {
 
 func TestGetCounter(t *testing.T) {
 	// Insert a row into the counter table
-	_, err := db.Exec(`
-		INSERT INTO 
-			counter (current_value, is_locked, updated_at, reseted_at) 
+	tableName := utils.TableInstance.Counter
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, is_locked, updated_at, reseted_at) 
 		VALUES 
-			(42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00')
-	`)
+			(42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, tableName)
+
+	_, err := db.Exec(insertQuery)
 	if err != nil {
-		t.Fatalf("failed to insert into table: %s", err)
+		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
 	}
 
-	counter, err := GetCounter("counter")
+	counter, err := GetCounter(tableName)
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -157,19 +159,29 @@ func TestGetCounter(t *testing.T) {
 	}
 
 	// Cleanup table after test
-	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
+	rawDeleteQuery := `
+		DELETE FROM %s;
+	`
+	deleteQuery := fmt.Sprintf(rawDeleteQuery, tableName)
+	if _, err = db.Exec(deleteQuery); err != nil {
 		t.Fatalf("failed to clean up table: %s", err)
 	}
 }
 
 func TestGetCounterEmpty(t *testing.T) {
+	tableName := utils.TableInstance.Counter
+
 	// Ensure table is empty
-	_, err := db.Exec(`DELETE FROM counter`)
+	rawDeleteQuery := `
+		DELETE FROM %s;
+	`
+	deleteQuery := fmt.Sprintf(rawDeleteQuery, tableName)
+	_, err := db.Exec(deleteQuery)
 	if err != nil {
 		t.Fatalf("failed to clean up table: %s", err)
 	}
 
-	counter, err := GetCounter("counter")
+	counter, err := GetCounter(tableName)
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -243,7 +255,7 @@ func TestUpdateCounter(t *testing.T) {
 }
 
 // NOTE: Test covers a typical situation where there are some existing rows in the counter table
-// and we simply need to update the counter. It is expected to update a increment the counter by
+// and we simply need to update the counter. It is expected to increment the counter by
 // one and update the updated_at field to NOW().
 func TestUpdateCounterTypicalCase(t *testing.T) {
 	// Insert a row into the counter table
@@ -420,5 +432,80 @@ func TestResetCounter(t *testing.T) {
 	// Cleanup table after test
 	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
 		t.Fatalf("failed to clean up table: %s", err)
+	}
+}
+
+func TestGetOhnoCounter(t *testing.T) {
+	// Insert a row into the ohno_counter table
+	tableName := utils.TableInstance.OhnoCounter
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, is_locked, updated_at, reseted_at) 
+		VALUES 
+			(42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, tableName)
+
+	_, err := db.Exec(insertQuery)
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
+	}
+
+	counter, err := GetCounter(tableName)
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 42 {
+		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
+	}
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+	if counter.UpdatedAt != "2024-05-30T12:34:56Z" {
+		t.Errorf("expected updated_at to be '2024-05-30T12:34:56Z', got %s", counter.UpdatedAt)
+	}
+	if counter.ResetedAt.String != "2024-05-01T12:00:00Z" {
+		t.Errorf("expected reseted_at to be '2024-05-01T12:00:00Z', got %s", counter.ResetedAt.String)
+	}
+
+	// Cleanup table after test
+	rawDeleteQuery := `
+		DELETE FROM %s;
+	`
+	deleteQuery := fmt.Sprintf(rawDeleteQuery, tableName)
+
+	if _, err = db.Exec(deleteQuery); err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
+	}
+}
+
+func TestGetOhnoCounterEmpty(t *testing.T) {
+	tableName := utils.TableInstance.OhnoCounter
+
+	// Ensure table is empty
+	rawDeleteQuery := `
+		DELETE FROM %s;
+	`
+	deleteQuery := fmt.Sprintf(rawDeleteQuery, tableName)
+	_, err := db.Exec(deleteQuery)
+	if err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
+	}
+
+	counter, err := GetCounter(tableName)
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 0 {
+		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
+	}
+	if counter.IsLocked != true {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+	if counter.UpdatedAt != "" {
+		t.Errorf("expected updated_at to be '', got %s", counter.UpdatedAt)
+	}
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be invalid, got valid")
 	}
 }

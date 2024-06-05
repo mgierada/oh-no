@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"server/utils"
 )
 
 func GetCounter(tableName string) (Counter, error) {
@@ -18,7 +19,7 @@ func GetCounter(tableName string) (Counter, error) {
 
 	if err != nil {
 		defaultIsLocked := false
-		if tableName == "ohno_counter" {
+		if tableName == utils.TableInstance.OhnoCounter {
 			defaultIsLocked = true
 		}
 		if err == sql.ErrNoRows {
