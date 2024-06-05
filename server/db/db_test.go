@@ -325,18 +325,21 @@ func TestUpdateCounterTypicalCase(t *testing.T) {
 // cannot update the counter because 24h did not pass since the last update.
 // It is expected that no counter is updated.
 func TestUpdateCounterTimeDidNotPass(t *testing.T) {
+	tableName := utils.TableInstance.Counter
 	// Check updated_at (should be close to current time)
 	updatedLessThan24hAgo := time.Now().UTC().Add(-23 * time.Hour)
 	parsedUpdatedLessThan24hAgo := updatedLessThan24hAgo.Format(time.RFC3339)
 
 	// Insert a row into the counter table
-	_, ierr := db.Exec(`
-		INSERT INTO
-			counter (current_value, is_locked, updated_at)
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, is_locked, updated_at) 
 		VALUES 
-			(42, false,  $1)`, parsedUpdatedLessThan24hAgo)
-	if ierr != nil {
-		t.Fatalf("failed to insert into table: %s", ierr)
+			(42, false, '%s');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, tableName, parsedUpdatedLessThan24hAgo)
+
+	_, err := db.Exec(insertQuery)
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
 	}
 
 	// Ensure db_test is not nil
@@ -351,7 +354,7 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 		t.Errorf("expected isUpdated to be false, got %v", isUpdated)
 	}
 
-	counter, err := GetCounter("counter")
+	counter, err := GetCounter(tableName)
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -374,9 +377,7 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 	}
 
 	// Cleanup table after test
-	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
-		t.Fatalf("failed to clean up table: %s", err)
-	}
+	cleanupTable(t, tableName)
 }
 
 // NOTE: Counter has some value, resetting, should be zero now.
@@ -619,6 +620,65 @@ func TestUpdateOhnoCounterTypicalCase(t *testing.T) {
 
 	if counter.IsLocked != false {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+
+	// Cleanup table after test
+	cleanupTable(t, tableName)
+}
+
+// NOTE: Test covers a situation where there are some existing rows in the ohno_counter table and
+// we cannot update the counter because 24h did not pass since the last update.
+// It is expected that no counter is updated.
+func TestUpdateOhnoCounterTimeDidNotPass(t *testing.T) {
+	tableName := utils.TableInstance.OhnoCounter
+	// Check updated_at (should be close to current time)
+	updatedLessThan24hAgo := time.Now().UTC().Add(-23 * time.Hour)
+	parsedUpdatedLessThan24hAgo := updatedLessThan24hAgo.Format(time.RFC3339)
+
+	// Insert a row into the counter table
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, is_locked, updated_at) 
+		VALUES 
+			(42, false, '%s');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, tableName, parsedUpdatedLessThan24hAgo)
+
+	_, err := db.Exec(insertQuery)
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
+	}
+
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Test UpdateOhnoCounter
+	isUpdated := UpdateOhnoCounter()
+
+	if isUpdated {
+		t.Errorf("expected isUpdated to be false, got %v", isUpdated)
+	}
+
+	counter, err := GetCounter(tableName)
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 42 {
+		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
+	}
+
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+
+	// Check updated_at (should be intact)
+	if counter.UpdatedAt != parsedUpdatedLessThan24hAgo {
+		t.Errorf("expected updated_at: '%s' to not change, got '%s'", parsedUpdatedLessThan24hAgo, counter.UpdatedAt)
+	}
+
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
 	}
 
 	// Cleanup table after test
