@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"server/utils"
 	"strings"
 	"time"
 )
@@ -166,7 +167,7 @@ func SetCounter(value int) error {
 }
 
 func UpdateCounter() bool {
-	isUpdated, err := upsertCounterData("counter")
+	isUpdated, err := upsertCounterData(utils.TableInstance.Counter)
 
 	if err != nil {
 		log.Printf("❌ Error updating counter.\n %s", err)
@@ -180,7 +181,7 @@ func UpdateCounter() bool {
 }
 
 func UpdateOhnoCounter() bool {
-	isUpdated, err := upsertCounterData("ohno_counter")
+	isUpdated, err := upsertCounterData(utils.TableInstance.OhnoCounter)
 
 	if err != nil {
 		log.Printf("❌ Error updating counter.\n %s", err)

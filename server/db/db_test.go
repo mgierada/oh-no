@@ -204,6 +204,7 @@ func TestGetCounterEmpty(t *testing.T) {
 // simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql
 // null string
 func TestUpdateCounter(t *testing.T) {
+	tableName := utils.TableInstance.Counter
 	// Ensure db_test is not nil
 	if db == nil {
 		t.Fatal("db is nil")
@@ -217,7 +218,7 @@ func TestUpdateCounter(t *testing.T) {
 	}
 
 	// Test GetCounter function
-	counter, err := GetCounter("counter")
+	counter, err := GetCounter(tableName)
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -249,7 +250,11 @@ func TestUpdateCounter(t *testing.T) {
 	}
 
 	// Cleanup table after test
-	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
+	rawDeleteQuery := `
+		DELETE FROM %s;
+	`
+	deleteQuery := fmt.Sprintf(rawDeleteQuery, tableName)
+	if _, err = db.Exec(deleteQuery); err != nil {
 		t.Fatalf("failed to clean up table: %s", err)
 	}
 }
@@ -507,5 +512,64 @@ func TestGetOhnoCounterEmpty(t *testing.T) {
 	}
 	if counter.ResetedAt.Valid {
 		t.Errorf("expected reseted_at to be invalid, got valid")
+	}
+}
+
+// NOTE: Test covers a situation where there are no existing rows in the ohno_counter table and we
+// simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql
+// null string
+func TestUpdateOhnoCounter(t *testing.T) {
+	tableName := utils.TableInstance.OhnoCounter
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Call the UpdateOhnoCounter function
+	isUpdated := UpdateOhnoCounter()
+
+	if !isUpdated {
+		t.Errorf("expected isUpdated to be true, got %v", isUpdated)
+	}
+
+	// Test GetCounter function
+	counter, err := GetCounter(tableName)
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	// Check current value
+	if counter.CurrentValue != 1 {
+		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+
+	// Allow for a small time difference (e.g., 5 seconds)
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 5 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	// Check reseted_at (should be null)
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
+
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+
+	// Cleanup table after test
+	rawDeleteQuery := `
+		DELETE FROM %s;
+	`
+	deleteQuery := fmt.Sprintf(rawDeleteQuery, tableName)
+	if _, err = db.Exec(deleteQuery); err != nil {
+		t.Fatalf("failed to clean up table: %s", err)
 	}
 }
