@@ -2,19 +2,22 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"server/utils"
 )
 
 func CreateHistoricalCountersTableIfNotExists(db *sql.DB) {
 	// Create the historical_counters table
-	createTableQuery := `
-		CREATE TABLE IF NOT EXISTS historical_counters (
+	tableName := utils.TableInstance.HistoricalCounter
+	rawCreateTableQuery := `
+		CREATE TABLE IF NOT EXISTS %s (
 			counter_id UUID PRIMARY KEY NOT NULL,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			value INT NOT NULL
-		);
-	`
+		);`
+	createTableQuery := fmt.Sprintf(rawCreateTableQuery, tableName)
 	_, err := db.Exec(createTableQuery)
 	if err != nil {
 		log.Fatalf("❌ Error creating historical_counters table.\n %s", err)
@@ -32,11 +35,11 @@ func CreateHistoricalCountersTableIfNotExists(db *sql.DB) {
 	`
 	_, err = db.Exec(createTriggerFunctionQuery)
 	if err != nil {
-		log.Fatalf("❌ Error creating trigger function for historical_counters table.\n %s", err)
+		log.Fatalf("❌ Error creating trigger function for %s table.\n %s", tableName, err)
 	}
 
 	// Create the trigger conditionally
-	createTriggerQuery := `
+	rawCreateTriggerQuery := `
 		DO $$ 
 		BEGIN
 			IF NOT EXISTS (
@@ -45,16 +48,17 @@ func CreateHistoricalCountersTableIfNotExists(db *sql.DB) {
 				WHERE tgname = 'update_historical_updated_at'
 			) THEN
 				CREATE TRIGGER update_historical_updated_at
-				BEFORE UPDATE ON historical_counters
+				BEFORE UPDATE ON %s
 				FOR EACH ROW
 				EXECUTE FUNCTION update_historical_updated_at_column();
 			END IF;
 		END $$;
 	`
+	createTriggerQuery := fmt.Sprintf(rawCreateTriggerQuery, tableName)
 	_, err = db.Exec(createTriggerQuery)
 	if err != nil {
-		log.Fatalf("❌ Error creating trigger for historical_counters table.\n %s", err)
+		log.Fatalf("❌ Error creating trigger for %s table.\n %s", tableName, err)
 	}
 
-	log.Println("✅ Ensured historical_counters table and trigger exist.")
+	log.Printf("✅ Ensured %s table and trigger exist.", tableName)
 }
