@@ -28,6 +28,9 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Database connection is not initialized")
 	}
 
+	// Set relevant environment variables
+	os.Setenv("UPDATE_INTERVAL_IN_HOURS", "24")
+
 	// Run tests
 	code := m.Run()
 

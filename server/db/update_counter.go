@@ -105,7 +105,15 @@ func upsertCounterData(tableName string) (bool, error) {
 			}
 		}
 
-		if time.Since(lastUpdated) < 24*time.Hour {
+		updateIntervalInt, err := utils.GetEnvInt("UPDATE_INTERVAL_IN_HOURS")
+		if err != nil {
+			return false, fmt.Errorf("❌ Error getting UPDATE_INTERVAL_IN_HOURS environment variable.\n %s", err)
+		}
+
+		updateInterval := time.Duration(updateIntervalInt)
+		log.Printf("🕒 UPDATE_INTERVAL_IN_HOURS: %d", updateInterval)
+
+		if time.Since(lastUpdated) < updateInterval*time.Hour {
 			log.Println("🙅 24 hours have not passed since the last update. Counter not increased...")
 			return false, nil
 		}
