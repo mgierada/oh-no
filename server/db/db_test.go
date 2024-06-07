@@ -748,7 +748,6 @@ func TestUpdateOhnoCounterTimeDidNotPass(t *testing.T) {
 // NOTE: Test covers a situation when counter has some values and we create a historical counter
 // by recording ohno event
 func TestCreatHistoricalCounter(t *testing.T) {
-
 	// Insert a row into the counter table
 	counterTableName := utils.TableInstance.Counter
 	historicalCounterTableName := utils.TableInstance.HistoricalCounter
@@ -807,5 +806,49 @@ func TestCreatHistoricalCounter(t *testing.T) {
 
 	// Cleanup table after test
 	cleanupTable(t, counterTableName)
+	cleanupTable(t, historicalCounterTableName)
+}
+
+// NOTE: Test retrieves historical counter items
+func TestGetHistoricalCouters(t *testing.T) {
+	// Insert a row into the counter table
+	historicalCounterTableName := utils.TableInstance.HistoricalCounter
+	rawInsertQuery := `
+		INSERT INTO %s (counter_id,  created_at, updated_at, value)
+		VALUES ('%s', '%s', '%s', %d);
+`
+
+	entries := []HistoricalCounter{
+		{"123e4567-e89b-12d3-a456-426614174000", "2024-05-30 12:34:56", "2024-07-01 12:00:00", 42},
+		{"223e4567-e89b-12d3-a456-426614174001", "2024-05-31 13:34:56", "2024-07-02 13:00:00", 43},
+		{"323e4567-e89b-12d3-a456-426614174002", "2024-06-01 14:34:56", "2024-07-03 14:00:00", 44},
+	}
+
+	for _, entry := range entries {
+		insertQuery := fmt.Sprintf(rawInsertQuery, historicalCounterTableName, entry.CounterID, entry.CreatedAt, entry.UpdatedAt, entry.Value)
+		_, err := db.Exec(insertQuery)
+		if err != nil {
+			t.Fatalf("failed to insert into table: %s, err: %s", historicalCounterTableName, err)
+		}
+	}
+
+	// Get historical counters
+	historicalCounters, err := GetHistoricalCounters(historicalCounterTableName)
+	if err != nil {
+		t.Fatalf("failed to get %s: %s", historicalCounterTableName, err)
+	}
+
+	// Assert historical_counter was created and it is a list
+	if len(historicalCounters) != 3 {
+		t.Fatalf("expected 3 historical counters, got %d", len(historicalCounters))
+	}
+	expectedValues := []int{42, 43, 44}
+	for counter_idx, expectedValue := range expectedValues {
+		if historicalCounters[counter_idx].Value != expectedValue {
+			t.Fatalf("expected value of the counter %d to be %d, got %d", counter_idx+1, expectedValue, historicalCounters[counter_idx].Value)
+		}
+	}
+
+	// Cleanup table after test
 	cleanupTable(t, historicalCounterTableName)
 }
