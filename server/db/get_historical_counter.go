@@ -11,12 +11,19 @@ type HistoricalCounter struct {
 	Value     int
 }
 
-func GetHistoricalCounters() ([]HistoricalCounter, error) {
+func GetHistoricalCounters(tableName string) ([]HistoricalCounter, error) {
 
-	query := "SELECT counter_id, updated_at, created_at, value FROM historical_counters"
+	rawQuery := `
+		SELECT 
+			counter_id, updated_at, created_at, value 
+		FROM 
+			%s;
+	`
+	query := fmt.Sprintf(rawQuery, tableName)
+
 	rows, err := db.Query(query)
 	if err != nil {
-		return nil, fmt.Errorf("❌ Error querying historical_counters table.\n %s", err)
+		return nil, fmt.Errorf("❌ Error querying %s table.\n %s", tableName, err)
 	}
 	defer rows.Close()
 

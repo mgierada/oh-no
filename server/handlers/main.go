@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"server/db"
+	"server/utils"
 )
 
 type ServerResponse struct {
@@ -38,7 +39,7 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = db.CreateHistoricalCounter(last_value)
+		err = db.CreateHistoricalCounter(utils.TableInstance.HistoricalCounter, last_value)
 		if err != nil {
 			log.Printf("❌ Error creating historical counter.\n %s", err)
 			http.Error(w, "Error creating historical counter.", http.StatusInternalServerError)

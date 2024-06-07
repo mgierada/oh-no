@@ -17,6 +17,9 @@ import (
 
 var postgresContainer testcontainers.Container
 
+/*
+Setup
+*/
 func TestMain(m *testing.M) {
 	// Setup before running tests
 	if err := setup(); err != nil {
@@ -140,6 +143,9 @@ func teardown() error {
 	return postgresContainer.Terminate(context.Background())
 }
 
+/*
+Test Cases
+*/
 func TestGetCounter(t *testing.T) {
 	// Insert a row into the counter table
 	tableName := utils.TableInstance.Counter
@@ -386,6 +392,7 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 // NOTE: Counter has some value, resetting, should be zero now.
 func TestResetCounter(t *testing.T) {
 
+	tableName := utils.TableInstance.Counter
 	_, err := db.Exec(`
 		INSERT INTO counter (current_value, is_locked, updated_at, reseted_at) 
 		VALUES (42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00')
@@ -439,9 +446,7 @@ func TestResetCounter(t *testing.T) {
 	}
 
 	// Cleanup table after test
-	if _, err = db.Exec(`DELETE FROM counter`); err != nil {
-		t.Fatalf("failed to clean up table: %s", err)
-	}
+	cleanupTable(t, tableName)
 }
 
 func TestGetOhnoCounter(t *testing.T) {
@@ -686,4 +691,69 @@ func TestUpdateOhnoCounterTimeDidNotPass(t *testing.T) {
 
 	// Cleanup table after test
 	cleanupTable(t, tableName)
+}
+
+// NOTE: Test covers a situation when counter has some values and we create a historical counter
+// by recording ohno event
+func TestCreatHistoricalCounter(t *testing.T) {
+
+	// Insert a row into the counter table
+	counterTableName := utils.TableInstance.Counter
+	historicalCounterTableName := utils.TableInstance.HistoricalCounter
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, is_locked, updated_at, reseted_at) 
+		VALUES 
+			(42, false, '2024-05-30 12:34:56', '2024-05-01 12:00:00');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, counterTableName)
+
+	_, err := db.Exec(insertQuery)
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s, err: %s", counterTableName, err)
+	}
+
+	// Reset the counter
+	lastValue, err := ResetCounter()
+	if err != nil {
+		t.Fatalf("failed to reset counter data: %s", err)
+	}
+
+	// Create historical counter entry
+	CreateHistoricalCounter(historicalCounterTableName, lastValue)
+
+	// Get historical counter
+	historicalCounter, err := GetHistoricalCounters(historicalCounterTableName)
+	if err != nil {
+		t.Fatalf("failed to get %s: %s", historicalCounterTableName, err)
+	}
+
+	// Check updated_at and created_at should be close to current time
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAtTime, err := time.Parse(time.RFC3339, historicalCounter[0].UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+	parsedCreatedAtTime, err := time.Parse(time.RFC3339, historicalCounter[0].CreatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse created_at: %s", err)
+	}
+
+	// Assert historical counter was created and it is a list
+	if len(historicalCounter) != 1 {
+		t.Fatalf("expected 1 historical counter, got %d", len(historicalCounter))
+	}
+	if historicalCounter[0].Value != 42 {
+		t.Fatalf("expected value to be 42, got %d", historicalCounter[0].Value)
+	}
+	// Allow for a small time difference (e.g., 5 seconds)
+	if expectedTime.Sub(parsedUpdatedAtTime).Seconds() > 5 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, historicalCounter[0].UpdatedAt)
+	}
+	// Allow for a small time difference (e.g., 5 seconds)
+	if expectedTime.Sub(parsedCreatedAtTime).Seconds() > 5 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, historicalCounter[0].UpdatedAt)
+	}
+
+	// Cleanup table after test
+	cleanupTable(t, counterTableName)
+	cleanupTable(t, historicalCounterTableName)
 }

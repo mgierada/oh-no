@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"server/db"
+	"server/utils"
 )
 
 func GetCounter(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +33,7 @@ func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
 func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received GET /historical request\n")
 
-	hCounters, err := db.GetHistoricalCounters()
+	hCounters, err := db.GetHistoricalCounters(utils.TableInstance.HistoricalCounter)
 	if err != nil {
 		log.Fatalf("❌ Error retrieving historical_counter data.\n %s", err)
 	}
