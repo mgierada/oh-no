@@ -389,9 +389,61 @@ func TestUpdateCounterTimeDidNotPass(t *testing.T) {
 	cleanupTable(t, tableName)
 }
 
-// NOTE: Counter has some value, resetting, should be zero now.
-func TestResetCounter(t *testing.T) {
+// NOTE: Resetting counter. Counter has no values - no entry exists, calling ResetCounter
+// should create a new counter element
+func TestResetCounterNoData(t *testing.T) {
+	tableName := utils.TableInstance.Counter
 
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Test ResetCounter
+	lastValue, err := ResetCounter()
+	if err != nil {
+		t.Fatalf("failed to reset counter data: %s", err)
+	}
+
+	if lastValue != 0 {
+		t.Errorf("expected last value to be 1, got %d", lastValue)
+	}
+
+	counter, err := GetCounter("counter")
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 1 {
+		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	}
+
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be false, got %v", counter.IsLocked)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+
+	// Allow for a small time difference - 1 seconds
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	if !counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be a valid sql null string, got %v", counter.ResetedAt)
+	}
+
+	// Cleanup table after test
+	cleanupTable(t, tableName)
+}
+
+// NOTE: Counter has some value, resetting, should be zero now
+func TestResetCounter(t *testing.T) {
 	tableName := utils.TableInstance.Counter
 	_, err := db.Exec(`
 		INSERT INTO counter (current_value, is_locked, updated_at, reseted_at) 
@@ -421,12 +473,12 @@ func TestResetCounter(t *testing.T) {
 		t.Fatalf("failed to get counter: %s", err)
 	}
 
-	if counter.CurrentValue != 0 {
-		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
+	if counter.CurrentValue != 1 {
+		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
 	}
 
 	if counter.IsLocked != false {
-		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+		t.Errorf("expected isLocked to be , got %v", counter.IsLocked)
 	}
 
 	// Check updated_at (should be close to current time)

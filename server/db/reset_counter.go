@@ -3,34 +3,36 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 func ResetCounter() (int, error) {
+	var counter Counter
+	var lastValue int
+
 	tx, err := db.Begin()
 	if err != nil {
 		return -1, fmt.Errorf("❌ Error starting transaction.\n %s", err)
 	}
 
-	var counter Counter
-	var lastValue int
-
-	query := (`
+	query := `
 		SELECT 
 			current_value, is_locked, updated_at, reseted_at 
 		FROM 
 			counter 
-		LIMIT 1 FOR UPDATE
-	`)
+		LIMIT 1 FOR UPDATE;
+	`
 
 	err = tx.QueryRow(query).Scan(&counter.CurrentValue, &counter.IsLocked, &counter.UpdatedAt, &counter.ResetedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
+			log.Print("❌ No counter, initializing one")
 			insertQuery := (`
 				INSERT INTO counter 
 					(current_value, is_locked, updated_at, reseted_at) 
 				VALUES 
-					(0, false, NOW(), NOW())
+				(1, false, NOW(), NOW())
 			`)
 
 			_, err = tx.Exec(insertQuery)
@@ -51,7 +53,7 @@ func ResetCounter() (int, error) {
 			UPDATE
 				counter 
 			SET 
-				current_value = 0, updated_at = NOW(), reseted_at = NOW()
+				current_value = 1, updated_at = NOW(), reseted_at = NOW()
 		`)
 		_, err = tx.Exec(updateQuery)
 		if err != nil {

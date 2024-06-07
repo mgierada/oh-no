@@ -12,7 +12,6 @@ type HistoricalCounter struct {
 }
 
 func GetHistoricalCounters(tableName string) ([]HistoricalCounter, error) {
-
 	rawQuery := `
 		SELECT 
 			counter_id, updated_at, created_at, value 
@@ -36,7 +35,6 @@ func GetHistoricalCounters(tableName string) ([]HistoricalCounter, error) {
 			return nil, fmt.Errorf("❌ Error scanning row.\n %s", err)
 		}
 		historicalCounters = append(historicalCounters, historicalCounter)
-
 	}
 
 	if err = rows.Err(); err != nil {
