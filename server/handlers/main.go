@@ -12,6 +12,10 @@ type ServerResponse struct {
 	Message string `json:"message"`
 }
 
+func RedirectToCounter(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/counter", http.StatusSeeOther)
+}
+
 func recordEvent(w http.ResponseWriter, r *http.Request, tableToResetAndLock string, tableToUnlock string, historicalTable string, serverResponseOkMessage string) {
 	switch r.Method {
 	case "POST":
