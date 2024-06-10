@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"server/db"
@@ -11,44 +12,43 @@ type ServerResponse struct {
 	Message string `json:"message"`
 }
 
-func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received /ohno request")
+func recordEvent(w http.ResponseWriter, r *http.Request, tableToResetAndLock string, tableToUnlock string, historicalTable string, serverResponseOkMessage string) {
 	switch r.Method {
 	case "POST":
-		last_value, err := db.ResetCounter()
+
+		last_value, err := db.ResetCounter(tableToResetAndLock)
 		if err != nil {
-			log.Printf("❌ Error resetting counter.\n %s", err)
-			http.Error(w, "Error resetting counter.", http.StatusInternalServerError)
+			log.Printf("❌ Error resetting %s.\n %s", tableToResetAndLock, err)
+			http.Error(w, fmt.Sprintf("Error resetting %s.", tableToResetAndLock), http.StatusInternalServerError)
 			return
 		}
 
-		_, err = db.LockCounter("counter")
-		log.Printf("🔓 Locking counter")
-
+		_, err = db.UnlockCounter(tableToUnlock)
+		log.Printf("🔓 Unlocking %s...", tableToUnlock)
 		if err != nil {
-			log.Printf("❌ Error locking counter.\n %s", err)
-			http.Error(w, "Error locking counter.", http.StatusInternalServerError)
+			log.Printf("❌ Error unlocking %s .\n %s", tableToUnlock, err)
+			http.Error(w, fmt.Sprintf("Error unlocking %s.", tableToUnlock), http.StatusInternalServerError)
 			return
 		}
 
-		_, err = db.UnlockCounter("ohno_counter")
-		log.Printf("🔓 Unlocking ohno counter")
+		_, err = db.LockCounter(tableToResetAndLock)
+		log.Printf("🔒 Locking %s...", tableToResetAndLock)
 		if err != nil {
-			log.Printf("❌ Error unlocking ohno counter.\n %s", err)
-			http.Error(w, "Error unlocking ohno counter.", http.StatusInternalServerError)
+			log.Printf("❌ Error locking %s .\n %s", tableToResetAndLock, err)
+			http.Error(w, fmt.Sprintf("Error locking %s.", tableToResetAndLock), http.StatusInternalServerError)
 			return
 		}
 
-		err = db.CreateHistoricalCounter(utils.TableInstance.HistoricalCounter, last_value)
+		err = db.CreateHistoricalCounter(historicalTable, last_value)
 		if err != nil {
-			log.Printf("❌ Error creating historical counter.\n %s", err)
-			http.Error(w, "Error creating historical counter.", http.StatusInternalServerError)
+			log.Printf("❌ Error creating %s.\n %s", historicalTable, err)
+			http.Error(w, fmt.Sprintf("Error creating %s.", historicalTable), http.StatusInternalServerError)
 			return
 		}
 
-		response := ServerResponse{Message: "Oh No! Event recorded"}
+		response := ServerResponse{Message: serverResponseOkMessage}
 		MarshalJson(w, http.StatusOK, response)
-		log.Println("🟢 Oh No! Event recorded")
+		log.Printf("🟢, %s", serverResponseOkMessage)
 
 	default:
 		log.Printf("❌ Only POST method is allowed")
@@ -56,4 +56,18 @@ func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
+}
+
+func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received /ohno request")
+	serverResponseOkMessage := "Oh No! Event recorded"
+	recordEvent(w, r, utils.TableInstance.OhnoCounter, utils.TableInstance.Counter, utils.TableInstance.HistoricalOhnoCounter, serverResponseOkMessage)
+
+}
+
+func RecordFineEvent(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received /fine request")
+	serverResponseOkMessage := "It's all good now! Event recorded"
+	recordEvent(w, r, utils.TableInstance.Counter, utils.TableInstance.OhnoCounter, utils.TableInstance.HistoricalCounter, serverResponseOkMessage)
+
 }

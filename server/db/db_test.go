@@ -400,16 +400,16 @@ func TestResetCounterNoData(t *testing.T) {
 	}
 
 	// Test ResetCounter
-	lastValue, err := ResetCounter()
+	lastValue, err := ResetCounter(tableName)
 	if err != nil {
-		t.Fatalf("failed to reset counter data: %s", err)
+		t.Fatalf("failed to reset %s data: %s", tableName, err)
 	}
 
 	if lastValue != 0 {
 		t.Errorf("expected last value to be 1, got %d", lastValue)
 	}
 
-	counter, err := GetCounter("counter")
+	counter, err := GetCounter(tableName)
 	if err != nil {
 		t.Fatalf("failed to get counter: %s", err)
 	}
@@ -459,18 +459,18 @@ func TestResetCounter(t *testing.T) {
 	}
 
 	// Test ResetCounter
-	lastValue, err := ResetCounter()
+	lastValue, err := ResetCounter(tableName)
 	if err != nil {
-		t.Fatalf("failed to reset counter data: %s", err)
+		t.Fatalf("failed resetting %s data: %s", tableName, err)
 	}
 
 	if lastValue != 42 {
 		t.Errorf("expected last value to be 42, got %d", lastValue)
 	}
 
-	counter, err := GetCounter("counter")
+	counter, err := GetCounter(tableName)
 	if err != nil {
-		t.Fatalf("failed to get counter: %s", err)
+		t.Fatalf("failed to get %s: %s", tableName, err)
 	}
 
 	if counter.CurrentValue != 1 {
