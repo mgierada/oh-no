@@ -763,7 +763,7 @@ func TestCreatHistoricalCounter(t *testing.T) {
 	}
 
 	// Reset the counter
-	lastValue, err := ResetCounter()
+	lastValue, err := ResetCounter(counterTableName)
 	if err != nil {
 		t.Fatalf("failed to reset counter data: %s", err)
 	}

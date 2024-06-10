@@ -39,7 +39,7 @@ func ResetCounter(tableName string) (int, error) {
 			_, err = tx.Exec(insertQuery)
 			if err != nil {
 				tx.Rollback()
-				return -1, fmt.Errorf("❌ Error inserting new $s row.\n %s", tableName, err)
+				return -1, fmt.Errorf("❌ Error inserting new %s row.\n %s", tableName, err)
 			}
 
 		} else {
