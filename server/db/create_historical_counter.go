@@ -13,11 +13,13 @@ func CreateHistoricalCounter(tableName string, lastValue int) error {
 		return nil
 	}
 	newCounterId := uuid.New().String()
+
 	rawInsertQuery := `
 		INSERT INTO %s (counter_id, value)
 		VALUES ('%s', %d);
 	`
 	insertQuery := fmt.Sprintf(rawInsertQuery, tableName, newCounterId, lastValue)
+
 	_, err := db.Exec(insertQuery)
 	if err != nil {
 		message := fmt.Sprintf("❌ Error inserting new %s row.\n %s", tableName, err)

@@ -48,7 +48,7 @@ func recordEvent(w http.ResponseWriter, r *http.Request, tableToResetAndLock str
 
 		response := ServerResponse{Message: serverResponseOkMessage}
 		MarshalJson(w, http.StatusOK, response)
-		log.Printf("🟢, %s", serverResponseOkMessage)
+		log.Printf("🟢 %s", serverResponseOkMessage)
 
 	default:
 		log.Printf("❌ Only POST method is allowed")
@@ -61,13 +61,12 @@ func recordEvent(w http.ResponseWriter, r *http.Request, tableToResetAndLock str
 func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /ohno request")
 	serverResponseOkMessage := "Oh No! Event recorded"
-	recordEvent(w, r, utils.TableInstance.OhnoCounter, utils.TableInstance.Counter, utils.TableInstance.HistoricalOhnoCounter, serverResponseOkMessage)
+	recordEvent(w, r, utils.TableInstance.Counter, utils.TableInstance.OhnoCounter, utils.TableInstance.HistoricalCounter, serverResponseOkMessage)
 
 }
 
 func RecordFineEvent(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔗 received /fine request")
 	serverResponseOkMessage := "It's all good now! Event recorded"
-	recordEvent(w, r, utils.TableInstance.Counter, utils.TableInstance.OhnoCounter, utils.TableInstance.HistoricalCounter, serverResponseOkMessage)
-
+	recordEvent(w, r, utils.TableInstance.OhnoCounter, utils.TableInstance.Counter, utils.TableInstance.HistoricalOhnoCounter, serverResponseOkMessage)
 }
