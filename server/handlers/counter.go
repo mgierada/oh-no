@@ -30,15 +30,22 @@ func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
 	MarshalJson(w, http.StatusOK, counter)
 }
 
-func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received GET /historical request\n")
-
-	hCounters, err := db.GetHistoricalCounters(utils.TableInstance.HistoricalCounter)
+func getHistoricalCounterEntries(w http.ResponseWriter, tableName string) {
+	hCounters, err := db.GetHistoricalCounters(tableName)
 	if err != nil {
-		log.Fatalf("❌ Error retrieving historical_counter data.\n %s", err)
+		log.Fatalf("❌ Error retrieving %s data.\n %s", tableName, err)
 	}
-
 	MarshalJson(w, http.StatusOK, hCounters)
+}
+
+func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received GET /historical/counter request\n")
+	getHistoricalCounterEntries(w, utils.TableInstance.HistoricalCounter)
+}
+
+func GetHistoricalOhnoCounter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🔗 received GET /historical/ohno-counter request\n")
+	getHistoricalCounterEntries(w, utils.TableInstance.HistoricalOhnoCounter)
 }
 
 func IncrementCounter(w http.ResponseWriter, r *http.Request) {
