@@ -16,6 +16,7 @@ func GetCounter(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
 	}
 
+	utils.EnableCors(&w, r)
 	MarshalJson(&w, http.StatusOK, counter)
 }
 

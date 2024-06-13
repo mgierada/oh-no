@@ -5,11 +5,9 @@ import (
 	"log"
 	"net/http"
 	"server/db"
-	"server/utils"
 )
 
 func MarshalJson(w *http.ResponseWriter, statusCode int, data interface{}) {
-	utils.EnableCors(w)
 	(*w).Header().Set("Content-Type", "application/json")
 	(*w).WriteHeader(statusCode)
 	jsonData, err := json.Marshal(data)
