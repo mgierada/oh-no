@@ -11,7 +11,7 @@ const CounterDisplay = () => {
     const fetchCurrentValue = async () => {
       try {
         // url = "https://ohno-server.fly.dev/counter"
-        url = "http://localhost:3333/counter";
+        const url = "http://localhost:3333/counter";
         const response = await axios.get(url);
         console.log("API response:", response);
         if (response.data && typeof response.data.CurrentValue === "number") {
@@ -32,24 +32,19 @@ const CounterDisplay = () => {
 
   return (
     <div>
-      <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-        Current Value: {currentValue}
-      </h1>
-      <div>
-        {loading ? (
-          <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-            Loading...
-          </h1>
-        ) : error ? (
-          <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-            {error}
-          </h1>
-        ) : (
-          <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-            Current streak: {currentValue} 🔥
-          </h1>
-        )}
-      </div>
+      {loading ? (
+        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+          Loading...
+        </h1>
+      ) : error ? (
+        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+          {error}
+        </h1>
+      ) : (
+        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+          Current streak: {currentValue} 🔥
+        </h1>
+      )}
     </div>
   );
 };
