@@ -51,13 +51,13 @@ func recordEvent(w http.ResponseWriter, r *http.Request, tableToResetAndLock str
 		}
 
 		response := ServerResponse{Message: serverResponseOkMessage}
-		MarshalJson(w, http.StatusOK, response)
+		MarshalJson(&w, http.StatusOK, response)
 		log.Printf("🟢 %s", serverResponseOkMessage)
 
 	default:
 		log.Printf("❌ Only POST method is allowed")
 		errResponse := ServerResponse{Message: "Only POST method is allowed"}
-		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
+		MarshalJson(&w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
 }

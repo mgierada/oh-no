@@ -16,7 +16,7 @@ func GetCounter(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
 	}
 
-	MarshalJson(w, http.StatusOK, counter)
+	MarshalJson(&w, http.StatusOK, counter)
 }
 
 func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("❌ Error retrieving ohno_counter data.\n %s", err)
 	}
 
-	MarshalJson(w, http.StatusOK, counter)
+	MarshalJson(&w, http.StatusOK, counter)
 }
 
 func getHistoricalCounterEntries(w http.ResponseWriter, tableName string) {
@@ -35,7 +35,7 @@ func getHistoricalCounterEntries(w http.ResponseWriter, tableName string) {
 	if err != nil {
 		log.Fatalf("❌ Error retrieving %s data.\n %s", tableName, err)
 	}
-	MarshalJson(w, http.StatusOK, hCounters)
+	MarshalJson(&w, http.StatusOK, hCounters)
 }
 
 func GetHistoricalCounter(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +56,7 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 		if !IsCounterLocked() && !IsOhnoCounterLocked() {
 			log.Printf("🤔 Both counters are unlocked. Something went wrong.")
 			errResponse := ServerResponse{Message: "Both counters are unlocked. Something went wrong."}
-			MarshalJson(w, http.StatusInternalServerError, errResponse)
+			MarshalJson(&w, http.StatusInternalServerError, errResponse)
 			log.Println("⁉️ Both counters are unlocked. Something went wrong.")
 			return
 		}
@@ -64,8 +64,8 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 		if IsCounterLocked() && IsOhnoCounterLocked() {
 			log.Printf("🤔 Both counters are locked. Something went wrong.")
 			errResponse := ServerResponse{Message: "Both counters are locked. Something went wrong."}
-			MarshalJson(w, http.StatusInternalServerError, errResponse)
 			log.Println("⁉️ Both counters are locked. Something went wrong.")
+			MarshalJson(&w, http.StatusInternalServerError, errResponse)
 			return
 		}
 
@@ -75,12 +75,12 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 
 			if !isUpdated {
 				errResponse := ServerResponse{Message: "Counter not incremented. Conditions not met."}
-				MarshalJson(w, http.StatusOK, errResponse)
+				MarshalJson(&w, http.StatusOK, errResponse)
 				return
 			}
 
 			response := ServerResponse{Message: "Counter incremented successfully"}
-			MarshalJson(w, http.StatusOK, response)
+			MarshalJson(&w, http.StatusOK, response)
 			log.Println("🟢 Counter incremented successfully")
 		}
 
@@ -90,19 +90,19 @@ func IncrementCounter(w http.ResponseWriter, r *http.Request) {
 
 			if !isUpdated {
 				errResponse := ServerResponse{Message: "Counter not incremented. Conditions not met."}
-				MarshalJson(w, http.StatusOK, errResponse)
+				MarshalJson(&w, http.StatusOK, errResponse)
 				return
 			}
 
 			response := ServerResponse{Message: "Ohno counter incremented successfully"}
-			MarshalJson(w, http.StatusOK, response)
+			MarshalJson(&w, http.StatusOK, response)
 			log.Println("🟢 Ohno counter incremented successfully")
 		}
 
 	default:
 		log.Printf("❌ Only POST method is allowed")
 		errResponse := ServerResponse{Message: "Only POST method is allowed"}
-		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
+		MarshalJson(&w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
 }
@@ -121,17 +121,17 @@ func SetCounterValue(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("❌ Error decoding request body.\n %s", err)
 			errResponse := ServerResponse{Message: "Error decoding request body"}
-			MarshalJson(w, http.StatusBadRequest, errResponse)
+			MarshalJson(&w, http.StatusBadRequest, errResponse)
 			return
 		}
 		db.SetCounter(body.Value)
 		response := ServerResponse{Message: "Counter incremented successfully"}
-		MarshalJson(w, http.StatusOK, response)
+		MarshalJson(&w, http.StatusOK, response)
 		log.Println("🟢 Counter incremented successfully")
 	default:
 		log.Printf("❌ Only POST method is allowed")
 		errResponse := ServerResponse{Message: "Only POST method is allowed"}
-		MarshalJson(w, http.StatusMethodNotAllowed, errResponse)
+		MarshalJson(&w, http.StatusMethodNotAllowed, errResponse)
 		return
 	}
 }
