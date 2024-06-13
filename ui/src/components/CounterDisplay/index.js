@@ -2,7 +2,8 @@ import axios from "axios";
 
 const fetchCurrentValue = async () => {
   try {
-    const url = "http://localhost:3333/counter";
+    // const url = "http://localhost:3333/counter";
+    const url = "https://ohno-server.fly.dev/counter";
     const response = await axios.get(url);
 
     if (response.data && typeof response.data.CurrentValue === "number") {
