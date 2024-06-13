@@ -4,8 +4,10 @@ const fetchCurrentValue = async () => {
   try {
     const rootUrl = process.env.ROOT_API_URL;
     const endpoint = `${rootUrl}/counter`;
+    console.log("Endpoint:", endpoint);
 
     const response = await axios.get(endpoint);
+    console.log("Response:", response.data); // Debug log
     if (response.data && typeof response.data.CurrentValue === "number") {
       return { currentValue: response.data.CurrentValue, error: null };
     } else {
