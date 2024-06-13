@@ -9,6 +9,7 @@ const fetchCurrentValue = async () => {
 
     const response = await axios.get(endpoint);
     console.log("Response:", response.data); // Debug log
+
     if (response.data && typeof response.data.CurrentValue === "number") {
       return { currentValue: response.data.CurrentValue, error: null };
     } else {
