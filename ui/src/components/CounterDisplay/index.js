@@ -3,6 +3,9 @@ import axios from "axios";
 const fetchCurrentValue = async () => {
   try {
     const rootUrl = process.env.ROOT_API_URL;
+    const publicRootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
+    console.log("publicRootUrl:", publicRootUrl);
+    // const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
     const endpoint = `${rootUrl}/counter`;
     console.log("Endpoint:", endpoint);
 

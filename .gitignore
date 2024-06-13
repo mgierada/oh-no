@@ -24,3 +24,4 @@ go.work
 *.env
 
 run_server
+.vercel
