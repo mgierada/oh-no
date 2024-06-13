@@ -3,13 +3,9 @@ import axios from "axios";
 const fetchCurrentValue = async () => {
   try {
     const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
-    console.log("rootUrl:", rootUrl);
     const endpoint = `${rootUrl}/counter`;
-    console.log("Endpoint:", endpoint);
 
     const response = await axios.get(endpoint);
-    console.log("Response:", response.data); // Debug log
-
     if (response.data && typeof response.data.CurrentValue === "number") {
       return { currentValue: response.data.CurrentValue, error: null };
     } else {
@@ -32,7 +28,7 @@ const CounterDisplay = async () => {
         </h1>
       ) : (
         <h1 className="scroll-m-20 text-4xl font-extrabold trackeng-tight lg:text-5xl">
-          Current streak: {currentValue} 🔥
+          Current streak: {currentValue} days 🔥
         </h1>
       )}
     </div>
