@@ -1,4 +1,3 @@
-import Image from "next/image";
 import CounterDisplay from "@/components/CounterDisplay";
 
 const Home = () => {

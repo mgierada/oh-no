@@ -2,10 +2,10 @@ import axios from "axios";
 
 const fetchCurrentValue = async () => {
   try {
-    // const url = "http://localhost:3333/counter";
-    const url = "https://ohno-server.fly.dev/counter";
-    const response = await axios.get(url);
+    const rootUrl = process.env.ROOT_API_URL;
+    const endpoint = `${rootUrl}/counter`;
 
+    const response = await axios.get(endpoint);
     if (response.data && typeof response.data.CurrentValue === "number") {
       return { currentValue: response.data.CurrentValue, error: null };
     } else {
@@ -27,7 +27,7 @@ const CounterDisplay = async () => {
           {error}
         </h1>
       ) : (
-        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+        <h1 className="scroll-m-20 text-4xl font-extrabold trackeng-tight lg:text-5xl">
           Current streak: {currentValue} 🔥
         </h1>
       )}
