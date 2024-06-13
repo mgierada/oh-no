@@ -1,5 +1,23 @@
-const CounterDisplay = ({ currentValue, error }) => {
-  console.log("Rendered with currentValue:", currentValue, "and error:", error); // Debug log
+import axios from "axios";
+
+const fetchCurrentValue = async () => {
+  try {
+    const url = "http://localhost:3333/counter";
+    const response = await axios.get(url);
+
+    if (response.data && typeof response.data.CurrentValue === "number") {
+      return { currentValue: response.data.CurrentValue, error: null };
+    } else {
+      throw new Error("Invalid response data");
+    }
+  } catch (error) {
+    console.error("Error fetching the current value:", error.message); // Debug log
+    return { currentValue: null, error: "Failed to fetch current value" };
+  }
+};
+
+const CounterDisplay = async () => {
+  const { currentValue, error } = await fetchCurrentValue();
 
   return (
     <div>

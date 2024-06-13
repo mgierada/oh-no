@@ -1,26 +1,7 @@
 import Image from "next/image";
-import axios from "axios";
 import CounterDisplay from "@/components/CounterDisplay";
 
-const fetchCurrentValue = async () => {
-  try {
-    const url = "http://localhost:3333/counter";
-    const response = await axios.get(url);
-
-    if (response.data && typeof response.data.CurrentValue === "number") {
-      return { currentValue: response.data.CurrentValue, error: null };
-    } else {
-      throw new Error("Invalid response data");
-    }
-  } catch (error) {
-    console.error("Error fetching the current value:", error.message); // Debug log
-    return { currentValue: null, error: "Failed to fetch current value" };
-  }
-};
-
-const Home = async () => {
-  const { currentValue, error } = await fetchCurrentValue();
-
+const Home = () => {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
@@ -129,7 +110,7 @@ const Home = async () => {
         </a>
       </div>
       <div>
-        <CounterDisplay currentValue={currentValue} error={error} />
+        <CounterDisplay />
       </div>
     </main>
   );
