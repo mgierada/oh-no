@@ -1,25 +1,4 @@
-import axios from "axios";
-
-const fetchCurrentValue = async () => {
-  try {
-    const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
-    const endpoint = `${rootUrl}/counter`;
-
-    const response = await axios.get(endpoint);
-    if (response.data && typeof response.data.CurrentValue === "number") {
-      return { currentValue: response.data.CurrentValue, error: null };
-    } else {
-      throw new Error("Invalid response data");
-    }
-  } catch (error) {
-    console.error("Error fetching the current value:", error.message); // Debug log
-    return { currentValue: null, error: "Failed to fetch current value" };
-  }
-};
-
-const CounterDisplay = async () => {
-  const { currentValue, error } = await fetchCurrentValue();
-
+const CounterDisplay = ({ currentValue, error }) => {
   return (
     <div>
       {error ? (
