@@ -1,23 +1,71 @@
 import axios from "axios";
 import CounterDisplay from "@/components/CounterDisplay";
 
+/**
+ * @typedef {Object} CounterApiResponse
+ * @property {number} CurrentValue - The current value of the counter.
+ * @property {string} UpdatedAt - The timestamp when the counter was last updated.
+ * @property {Object} ResetedAt - The reset information.
+ * @property {string} ResetedAt.String - The timestamps when the counter was reset.
+ * @property {boolean} ResetedAt.Valid - The validity of the reset object timestamps.
+ * @property {boolean} IsLocked - Indicates if the counter is locked.
+ */
+
+/**
+ * @typedef {Object} Counter
+ * @property {number|null} currentValue - The current value of the counter.
+ * @property {string|null} updatedAt - The timestamps when the last update was made.
+ * @property {boolean} isLocked - A flag indicating whether the counter updates are currently locked
+ * @property {string|null} resetedAt - The timestamps when the counter was reset.
+ * @property {boolean|null} wasEverReset - The validity of the reset object timestamps.
+ * @property {string|null} error - The error message if fetching failed.
+ */
+
+/**
+ * Fetches the current value of the counter from the API.
+ * @returns {Promise<Counter>} A promise that resolves to an object containing the current value and an error message if any.
+ */
 const fetchCounter = async () => {
   try {
     const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
     const endpoint = `${rootUrl}/counter`;
 
     const response = await axios.get(endpoint);
-    if (response.data && typeof response.data.CurrentValue === "number") {
-      return { currentValue: response.data.CurrentValue, error: null };
-    } else {
+
+    /** @type {CounterApiResponse} */
+    const data = response.data;
+    console.log("Response data:", data);
+
+    if (!data) {
       throw new Error("Invalid response data");
     }
+    /** @type {Counter} */
+    const result = {
+      currentValue: data.CurrentValue,
+      updatedAt: data.UpdatedAt,
+      resetedAt: data.ResetedAt.String,
+      wasEverReset: data.ResetedAt.Valid,
+      isLocked: data.IsLocked,
+      error: null,
+    };
+    return result;
   } catch (error) {
-    console.error("Error fetching the current value:", error.message); // Debug log
-    return { currentValue: null, error: "Failed to fetch current value" };
+    console.error("Error fetching the current value:", error.message);
+    return {
+      currentValue: null,
+      updatedAt: null,
+      resetedAt: null,
+      wasEverReset: null,
+      isLocked: false,
+      error: "Failed to fetch current value",
+    };
   }
 };
 
+/**
+ * Home component.
+ * @returns {JSX.Element} The Home component.
+ */
 const Home = async () => {
   const { currentValue, error } = await fetchCounter();
 
