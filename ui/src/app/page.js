@@ -34,7 +34,6 @@ const fetchCounter = async () => {
 
     /** @type {CounterApiResponse} */
     const data = response.data;
-    console.log("Response data:", data);
 
     if (!data) {
       throw new Error("Invalid response data");
