@@ -1,4 +1,5 @@
 import CounterDisplay from "@/components/CounterDisplay";
+import Callendar from "@/components/Callendar";
 
 /**
  * @typedef {Object} CounterApiResponse
@@ -75,6 +76,9 @@ const Home = async () => {
       <div className="z-10 max-w-5xl w-full flex flex-col items-center justify-center font-mono text-sm lg:flex"></div>
       <div className="flex flex-col items-center justify-center">
         <CounterDisplay currentValue={data.currentValue} error={data.error} />
+      </div>
+      <div className="flex flex-col items-center justify-center">
+        <Callendar className="mt-5" />
       </div>
     </main>
   );
