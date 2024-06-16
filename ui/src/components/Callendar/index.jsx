@@ -14,9 +14,12 @@ import {
 } from "@/components/ui/popover";
 
 const Callendar = ({ className, lastTimeReseted, currentCouterValue }) => {
+  const fromDate = lastTimeReseted
+    ? new Date(lastTimeReseted)
+    : new Date(2024, 4, 13);
   const [date, setDate] = React.useState({
-    from: lastTimeReseted ? new Date(lastTimeReseted) : new Date(2024, 4, 13),
-    to: addDays(new Date(2024, 4, 13), currentCouterValue),
+    from: fromDate,
+    to: addDays(fromDate, currentCouterValue),
   });
   return (
     <div className={cn("grid gap-2", className)}>
