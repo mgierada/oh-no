@@ -31,15 +31,18 @@ const fetchCounter = async () => {
     const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
     const endpoint = `${rootUrl}/counter`;
 
-    const response = await axios.get(endpoint);
+    const response = await fetch(endpoint, { cache: "no-store" });
 
-    /** @type {CounterApiResponse} */
-    const data = response.data;
+    if (!response.ok) {
+      throw new Error("Failed to fetch data");
+    }
+
+    const data = await response.json();
 
     if (!data) {
       throw new Error("Invalid response data");
     }
-    /** @type {Counter} */
+
     const result = {
       currentValue: data.CurrentValue,
       updatedAt: data.UpdatedAt,
@@ -67,18 +70,16 @@ const fetchCounter = async () => {
  * @returns {JSX.Element} The Home component.
  */
 const Home = async () => {
-  const { currentValue, error } = await fetchCounter();
+  const data = await fetchCounter();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex"></div>
 
       <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <CounterDisplay currentValue={currentValue} error={error} />
+        <CounterDisplay currentValue={data.currentValue} error={data.error} />
       </div>
-      <div>
-        <CounterCard />
-      </div>
+      <div>{/* <CounterCard /> */}</div>
     </main>
   );
 };
