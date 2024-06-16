@@ -13,12 +13,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-const Callendar = ({ className }) => {
+const Callendar = ({ className, lastTimeReseted, currentCouterValue }) => {
   const [date, setDate] = React.useState({
-    from: new Date(2022, 0, 20),
-    to: addDays(new Date(2022, 0, 20), 20),
+    from: lastTimeReseted || new Date(2024, 4, 13),
+    to: addDays(new Date(2024, 4, 13), currentCouterValue),
   });
-
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -53,7 +52,7 @@ const Callendar = ({ className }) => {
             defaultMonth={date?.from}
             selected={date}
             onSelect={() => {}}
-            numberOfMonths={2}
+            numberOfMonths={1}
             disabled={() => true}
           />
         </PopoverContent>

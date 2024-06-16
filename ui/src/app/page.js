@@ -36,12 +36,14 @@ const fetchCounter = async () => {
       throw new Error("Failed to fetch data");
     }
 
+    /** @type {CounterApiResponse} */
     const data = await response.json();
 
     if (!data) {
       throw new Error("Invalid response data");
     }
 
+    /** @type {Counter} */
     const result = {
       currentValue: data.CurrentValue,
       updatedAt: data.UpdatedAt,
@@ -52,7 +54,7 @@ const fetchCounter = async () => {
     };
     return result;
   } catch (error) {
-    console.error("Error fetching the current value:", error.message);
+    /** @type {Counter} */
     return {
       currentValue: null,
       updatedAt: null,
@@ -69,6 +71,7 @@ const fetchCounter = async () => {
  * @returns {JSX.Element} The Home component.
  */
 const Home = async () => {
+  /** @type {Counter} */
   const data = await fetchCounter();
 
   return (
@@ -78,7 +81,11 @@ const Home = async () => {
         <CounterDisplay currentValue={data.currentValue} error={data.error} />
       </div>
       <div className="flex flex-col items-center justify-center">
-        <Callendar className="mt-5" />
+        <Callendar
+          className="mt-5"
+          lastTimeReseted={data.resetedAt}
+          currentCouterValue={data.currentValue}
+        />
       </div>
     </main>
   );
