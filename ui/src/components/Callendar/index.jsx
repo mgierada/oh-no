@@ -15,7 +15,7 @@ import {
 
 const Callendar = ({ className, lastTimeReseted, currentCouterValue }) => {
   const [date, setDate] = React.useState({
-    from: lastTimeReseted || new Date(2024, 4, 13),
+    from: lastTimeReseted ? new Date(lastTimeReseted) : new Date(2024, 4, 13),
     to: addDays(new Date(2024, 4, 13), currentCouterValue),
   });
   return (
@@ -45,7 +45,12 @@ const Callendar = ({ className, lastTimeReseted, currentCouterValue }) => {
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent
+          className="w-auto p-0"
+          align="center"
+          side="top"
+          sideOffset={10}
+        >
           <Calendar
             initialFocus
             mode="range"
