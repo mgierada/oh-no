@@ -1,5 +1,6 @@
 import CounterDisplay from "@/components/CounterDisplay";
 import Callendar from "@/components/Callendar";
+import { DisplayCard } from "@/components/Card";
 
 /**
  * @typedef {Object} CounterApiResponse
@@ -75,18 +76,28 @@ const Home = async () => {
   const data = await fetchCounter();
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-5">
-      <div className="z-10 max-w-5xl w-full flex flex-col items-center justify-center font-mono text-sm lg:flex"></div>
-      <div className="flex flex-col items-center justify-center">
-        <CounterDisplay currentValue={data.currentValue} error={data.error} />
+    <main className="flex flex-col min-h-screen items-center justify-between p-4">
+      <div className="flex space-x-4 justify-center lg:grid-cols-2 md:grid-cols-2">
+        <DisplayCard
+          title="Best healthy"
+          value={26}
+          description="better then last time"
+        />
+        <DisplayCard
+          title="Worst ill"
+          value={2}
+          description="worse then last time"
+        />
       </div>
       <div className="flex flex-col items-center justify-center">
+        <CounterDisplay currentValue={data.currentValue} error={data.error} />
         <Callendar
           className="mt-5"
           lastTimeReseted={data.resetedAt}
           currentCouterValue={data.currentValue}
         />
       </div>
+      <div className="flex flex-col items-center justify-center"></div>
     </main>
   );
 };
