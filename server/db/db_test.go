@@ -755,9 +755,9 @@ func TestUpdateOhnoCounterTypicalCase(t *testing.T) {
 
 	// Insert a row into the counter table
 	rawInsertQuery := `
-		INSERT INTO %s (current_value, is_locked, updated_at) 
+		INSERT INTO %s (current_value, max_value, is_locked, updated_at) 
 		VALUES 
-			(42, false, '2024-05-30 12:34:56');`
+			(42, 42, false, '2024-05-30 12:34:56');`
 	insertQuery := fmt.Sprintf(rawInsertQuery, tableName)
 
 	_, err := db.Exec(insertQuery)
@@ -785,6 +785,9 @@ func TestUpdateOhnoCounterTypicalCase(t *testing.T) {
 
 	if counter.CurrentValue != 43 {
 		t.Errorf("expected current_value to be 43, got %d", counter.CurrentValue)
+	}
+	if counter.MaxValue != 43 {
+		t.Errorf("expected max_value to be 43, got %d", counter.MaxValue)
 	}
 
 	// Check updated_at (should be close to current time)
