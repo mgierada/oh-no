@@ -99,67 +99,6 @@ func setup() error {
 	return nil
 }
 
-func createTriggerForCounterTableForTest(db *sql.DB, tableName string) error {
-	var err error
-	triggerFunctionName := fmt.Sprintf("%s_update_updated_at_column", tableName)
-	triggerName := fmt.Sprintf("%s_update_updated_at", tableName)
-
-	createTriggerFunctionQuery := fmt.Sprintf(`
-		CREATE OR REPLACE FUNCTION %s()
-		RETURNS TRIGGER AS $$
-		BEGIN
-			NEW.updated_at = now();
-			IF NEW.current_value > NEW.max_value THEN
-				NEW.max_value = NEW.current_value;
-			END IF;
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql;
-	`, triggerFunctionName)
-	_, err = db.Exec(createTriggerFunctionQuery)
-	if err != nil {
-		log.Fatalf("❌ Error creating trigger function for %s table.\n %s", tableName, err)
-	}
-
-	createTriggerQuery := fmt.Sprintf(`
-		DO $$ 
-		BEGIN
-			IF NOT EXISTS (
-				SELECT 1 
-				FROM pg_trigger 
-				WHERE tgname = '%s'
-			) THEN
-				CREATE TRIGGER %s
-				BEFORE UPDATE ON %s
-				FOR EACH ROW
-				EXECUTE FUNCTION %s();
-			END IF;
-		END $$;
-	`, triggerName, triggerName, tableName, triggerFunctionName)
-	_, err = db.Exec(createTriggerQuery)
-	if err != nil {
-		log.Fatalf("❌ Error creating trigger for %s table.\n %s", tableName, err)
-	}
-	return nil
-}
-
-func createCounterTableForTest(db *sql.DB, tableName string) error {
-	var err error
-	rawCreateQuery := `CREATE TABLE IF NOT EXISTS %s (
-		current_value INT NOT NULL,
-		max_value INT NULL DEFAULT 0,
-		is_locked BOOLEAN NOT NULL DEFAULT FALSE,
-		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		reseted_at TIMESTAMP NULL DEFAULT NULL
-	);`
-	createQuery := fmt.Sprintf(rawCreateQuery, tableName)
-	_, err = db.Exec(createQuery)
-	if err != nil {
-		return fmt.Errorf("failed to create table %s: %w", tableName, err)
-	}
-	return nil
-}
-
 func createHistoricalCounterForTest(db *sql.DB, tableName string) error {
 	var err error
 	rawCreateQuery := `CREATE TABLE IF NOT EXISTS %s (
