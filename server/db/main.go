@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"server/db/models"
+	"server/utils"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
@@ -45,8 +46,10 @@ func Connect() {
 	}
 	log.Printf("✅ Connected to database %s on %s", dbName, dbAddress)
 
-	models.CreateCounterTableIfNotExists(db)
+	models.CreateCounterTableIfNotExists(db, utils.TableInstance.Counter)
+	models.CreateOrReplaceTrigger(db, utils.TableInstance.Counter)
+	models.CreateCounterTableIfNotExists(db, utils.TableInstance.OhnoCounter)
+	models.CreateOrReplaceTrigger(db, utils.TableInstance.OhnoCounter)
 	models.CreateHistoricalCountersTableIfNotExists(db)
-	models.CreateOhnoCounterTableIfNotExists(db)
 	models.CreateHistoricalOhnoCountersTableIfNotExists(db)
 }

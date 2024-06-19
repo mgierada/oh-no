@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"server/db/models"
 	"server/utils"
 	"testing"
 	"time"
@@ -88,10 +89,10 @@ func setup() error {
 	/*
 		Prepare tables for testing and create triggers
 	*/
-	createCounterTableForTest(db, utils.TableInstance.Counter)
-	createCounterTableForTest(db, utils.TableInstance.OhnoCounter)
-	createTriggerForCounterTableForTest(db, utils.TableInstance.Counter)
-	createTriggerForCounterTableForTest(db, utils.TableInstance.OhnoCounter)
+	models.CreateCounterTableIfNotExists(db, utils.TableInstance.Counter)
+	models.CreateOrReplaceTrigger(db, utils.TableInstance.Counter)
+	models.CreateCounterTableIfNotExists(db, utils.TableInstance.OhnoCounter)
+	models.CreateOrReplaceTrigger(db, utils.TableInstance.OhnoCounter)
 	createHistoricalCounterForTest(db, utils.TableInstance.HistoricalCounter)
 	createHistoricalCounterForTest(db, utils.TableInstance.HistoricalOhnoCounter)
 
