@@ -65,8 +65,8 @@ func upsertCounterData(tableName string) (bool, error) {
 			log.Println("No rows found in counter table. Inserting new row.")
 
 			insertCounterQuery := fmt.Sprintf(`
-				INSERT INTO %s (current_value, updated_at)
-				VALUES (1, NOW())
+				INSERT INTO %s (current_value, max_value, updated_at)
+				VALUES (1, 1, NOW())
 			`, tableName)
 
 			_, err = tx.Exec(insertCounterQuery)

@@ -252,6 +252,9 @@ func TestGetCounterEmpty(t *testing.T) {
 	if counter.CurrentValue != 0 {
 		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
 	}
+	if counter.MaxValue != 0 {
+		t.Errorf("expected max_value to be 0, got %d", counter.MaxValue)
+	}
 	if counter.IsLocked != false {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
@@ -289,6 +292,9 @@ func TestUpdateCounter(t *testing.T) {
 	// Check current value
 	if counter.CurrentValue != 1 {
 		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	}
+	if counter.MaxValue != 1 {
+		t.Errorf("expected max_value to be 1, got %d", counter.MaxValue)
 	}
 
 	// Check updated_at (should be close to current time)
