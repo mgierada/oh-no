@@ -113,7 +113,6 @@ func upsertCounterData(tableName string) (bool, error) {
 
 		updateInterval := time.Duration(updateIntervalInt)
 
-		// if time.Since(lastUpdated) < updateInterval*time.Second {
 		if time.Since(lastUpdated) < updateInterval*time.Hour {
 			log.Printf("🙅 %d hours have not passed since the last update. Counter not increased...", updateIntervalInt)
 			return false, nil
