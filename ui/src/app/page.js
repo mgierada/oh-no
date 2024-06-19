@@ -110,6 +110,9 @@ const Home = async () => {
           lastTimeReseted={dataHealthyCounter.resetedAt}
           currentCouterValue={dataHealthyCounter.currentValue}
         />
+        <p className="text-sm text-muted-foreground">
+          Click dates to see the details.
+        </p>
       </div>
       <div className="flex flex-col items-center justify-center"></div>
     </main>
