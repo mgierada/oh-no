@@ -87,9 +87,54 @@ func setup() error {
 
 	createCounterTableForTest(db, utils.TableInstance.Counter)
 	createCounterTableForTest(db, utils.TableInstance.OhnoCounter)
+	createTriggerForCounterTableForTest(db, utils.TableInstance.Counter)
+	createTriggerForCounterTableForTest(db, utils.TableInstance.OhnoCounter)
 	createHistoricalCounterForTest(db, utils.TableInstance.HistoricalCounter)
 	createHistoricalCounterForTest(db, utils.TableInstance.HistoricalOhnoCounter)
 
+	return nil
+}
+
+func createTriggerForCounterTableForTest(db *sql.DB, tableName string) error {
+	var err error
+	createTriggerFunctionQuery := `
+		CREATE OR REPLACE FUNCTION update_updated_at_column()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			NEW.updated_at = now();
+			IF NEW.current_value > NEW.max_value THEN
+				NEW.max_value = NEW.current_value;
+			END IF;
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql;
+	`
+	_, err = db.Exec(createTriggerFunctionQuery)
+	if err != nil {
+		log.Fatalf("❌ Error creating trigger function for %s table.\n %s", tableName, err)
+	}
+
+	// Create the trigger conditionally
+	rawCreateTriggerQuery := `
+		DO $$ 
+		BEGIN
+			IF NOT EXISTS (
+				SELECT 1 
+				FROM pg_trigger 
+				WHERE tgname = 'update_updated_at'
+			) THEN
+				CREATE TRIGGER update_updated_at
+				BEFORE UPDATE ON %s
+				FOR EACH ROW
+				EXECUTE FUNCTION update_updated_at_column();
+			END IF;
+		END $$;
+	`
+	createTriggerQuery := fmt.Sprintf(rawCreateTriggerQuery, tableName)
+	_, err = db.Exec(createTriggerQuery)
+	if err != nil {
+		log.Fatalf("❌ Error creating trigger for %s table.\n %s", tableName, err)
+	}
 	return nil
 }
 
@@ -97,6 +142,7 @@ func createCounterTableForTest(db *sql.DB, tableName string) error {
 	var err error
 	rawCreateQuery := `CREATE TABLE IF NOT EXISTS %s (
 		current_value INT NOT NULL,
+		max_value INT NULL DEFAULT 0,
 		is_locked BOOLEAN NOT NULL DEFAULT FALSE,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		reseted_at TIMESTAMP NULL DEFAULT NULL
@@ -167,6 +213,9 @@ func TestGetCounter(t *testing.T) {
 
 	if counter.CurrentValue != 42 {
 		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
+	}
+	if counter.MaxValue != 0 {
+		t.Errorf("expected max_value to be 0, got %d", counter.MaxValue)
 	}
 	if counter.IsLocked != false {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
@@ -275,9 +324,9 @@ func TestUpdateCounterTypicalCase(t *testing.T) {
 
 	// Insert a row into the counter table
 	rawInsertQuery := `
-		INSERT INTO %s (current_value, is_locked, updated_at) 
+		INSERT INTO %s (current_value, max_value, is_locked, updated_at) 
 		VALUES 
-			(42, false, '2024-05-30 12:34:56');`
+			(42, 42, false, '2024-05-30 12:34:56');`
 	insertQuery := fmt.Sprintf(rawInsertQuery, tableName)
 
 	_, err := db.Exec(insertQuery)
@@ -304,6 +353,76 @@ func TestUpdateCounterTypicalCase(t *testing.T) {
 
 	if counter.CurrentValue != 43 {
 		t.Errorf("expected current_value to be 43, got %d", counter.CurrentValue)
+	}
+	if counter.MaxValue != 43 {
+		t.Errorf("expected max_value to be 43, got %d", counter.MaxValue)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+
+	// Allow for a small time difference - 1 seconds
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
+
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
+
+	// Cleanup table after test
+	cleanupTable(t, tableName)
+}
+
+// NOTE: Test covers a typical situation where there are some existing rows in the counter table
+// and we simply need to update the counter. It is expected to increment the counter by
+// one and update the updated_at field to NOW(). The max_value should not be updated because it is
+// lower than the current_value.
+func TestUpdateCounterTypicalCaseMaxValueNotReached(t *testing.T) {
+	tableName := utils.TableInstance.Counter
+
+	// Insert a row into the counter table
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, max_value, is_locked, updated_at) 
+		VALUES 
+			(42, 100, false, '2024-05-30 12:34:56');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, tableName)
+
+	_, err := db.Exec(insertQuery)
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
+	}
+
+	// Ensure db_test is not nil
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	// Test UpdateCounter
+	isUpdated := UpdateCounter()
+
+	if !isUpdated {
+		t.Errorf("expected isUpdated to be true, got %v", isUpdated)
+	}
+
+	counter, err := GetCounter(tableName)
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 43 {
+		t.Errorf("expected current_value to be 43, got %d", counter.CurrentValue)
+	}
+	if counter.MaxValue != 100 {
+		t.Errorf("expected max_value to be 100, got %d", counter.MaxValue)
 	}
 
 	// Check updated_at (should be close to current time)
