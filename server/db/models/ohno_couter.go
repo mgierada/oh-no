@@ -8,7 +8,7 @@ import (
 )
 
 func CreateOhnoCounterTableIfNotExists(db *sql.DB) {
-	// Create the counter table for ohno period
+	// Create ohno counter table
 	tableName := utils.TableInstance.OhnoCounter
 
 	rawCreateTableQuery := `

@@ -85,6 +85,9 @@ func setup() error {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
+	/*
+		Prepare tables for testing and create triggers
+	*/
 	createCounterTableForTest(db, utils.TableInstance.Counter)
 	createCounterTableForTest(db, utils.TableInstance.OhnoCounter)
 	createTriggerForCounterTableForTest(db, utils.TableInstance.Counter)
@@ -97,8 +100,11 @@ func setup() error {
 
 func createTriggerForCounterTableForTest(db *sql.DB, tableName string) error {
 	var err error
-	createTriggerFunctionQuery := `
-		CREATE OR REPLACE FUNCTION update_updated_at_column()
+	triggerFunctionName := fmt.Sprintf("%s_update_updated_at_column", tableName)
+	triggerName := fmt.Sprintf("%s_update_updated_at", tableName)
+
+	createTriggerFunctionQuery := fmt.Sprintf(`
+		CREATE OR REPLACE FUNCTION %s()
 		RETURNS TRIGGER AS $$
 		BEGIN
 			NEW.updated_at = now();
@@ -108,29 +114,27 @@ func createTriggerForCounterTableForTest(db *sql.DB, tableName string) error {
 			RETURN NEW;
 		END;
 		$$ LANGUAGE plpgsql;
-	`
+	`, triggerFunctionName)
 	_, err = db.Exec(createTriggerFunctionQuery)
 	if err != nil {
 		log.Fatalf("❌ Error creating trigger function for %s table.\n %s", tableName, err)
 	}
 
-	// Create the trigger conditionally
-	rawCreateTriggerQuery := `
+	createTriggerQuery := fmt.Sprintf(`
 		DO $$ 
 		BEGIN
 			IF NOT EXISTS (
 				SELECT 1 
 				FROM pg_trigger 
-				WHERE tgname = 'update_updated_at'
+				WHERE tgname = '%s'
 			) THEN
-				CREATE TRIGGER update_updated_at
+				CREATE TRIGGER %s
 				BEFORE UPDATE ON %s
 				FOR EACH ROW
-				EXECUTE FUNCTION update_updated_at_column();
+				EXECUTE FUNCTION %s();
 			END IF;
 		END $$;
-	`
-	createTriggerQuery := fmt.Sprintf(rawCreateTriggerQuery, tableName)
+	`, triggerName, triggerName, tableName, triggerFunctionName)
 	_, err = db.Exec(createTriggerQuery)
 	if err != nil {
 		log.Fatalf("❌ Error creating trigger for %s table.\n %s", tableName, err)
@@ -648,6 +652,9 @@ func TestGetOhnoCounter(t *testing.T) {
 	if counter.CurrentValue != 42 {
 		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
 	}
+	if counter.MaxValue != 0 {
+		t.Errorf("expected max_value to be 0, got %d", counter.MaxValue)
+	}
 	if counter.IsLocked != false {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
@@ -683,6 +690,9 @@ func TestGetOhnoCounterEmpty(t *testing.T) {
 	if counter.CurrentValue != 0 {
 		t.Errorf("expected current_value to be 0, got %d", counter.CurrentValue)
 	}
+	if counter.MaxValue != 0 {
+		t.Errorf("expected max_value to be 0, got %d", counter.MaxValue)
+	}
 	if counter.IsLocked != true {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
@@ -696,7 +706,7 @@ func TestGetOhnoCounterEmpty(t *testing.T) {
 
 // NOTE: Test covers a situation where there are no existing rows in the ohno_counter table and we
 // simply need to create one with CurrentValue=1 and UpdatedAt=NOW(). ResetedAt should be a sql
-// null string
+// null string and MaxValue should be 1
 func TestUpdateOhnoCounter(t *testing.T) {
 	tableName := utils.TableInstance.OhnoCounter
 	// Ensure db_test is not nil
@@ -720,6 +730,11 @@ func TestUpdateOhnoCounter(t *testing.T) {
 	// Check current value
 	if counter.CurrentValue != 1 {
 		t.Errorf("expected current_value to be 1, got %d", counter.CurrentValue)
+	}
+
+	// Check current value
+	if counter.MaxValue != 1 {
+		t.Errorf("expected max_value to be 1, got %d", counter.MaxValue)
 	}
 
 	// Check updated_at (should be close to current time)
@@ -749,7 +764,8 @@ func TestUpdateOhnoCounter(t *testing.T) {
 
 // NOTE: Test covers a typical situation where there are some existing rows in the ohno_counter
 // table and we simply need to update the counter. It is expected to increment the counter by
-// one and update the updated_at field to NOW().
+// one and update the updated_at field to NOW(). maxValue should be updated because it is lower
+// then currentValue
 func TestUpdateOhnoCounterTypicalCase(t *testing.T) {
 	tableName := utils.TableInstance.OhnoCounter
 
@@ -766,12 +782,10 @@ func TestUpdateOhnoCounterTypicalCase(t *testing.T) {
 		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
 	}
 
-	// Ensure db_test is not nil
 	if db == nil {
 		t.Fatal("db is nil")
 	}
 
-	// Test UpdateOhnoCounter
 	isUpdated := UpdateOhnoCounter()
 
 	if !isUpdated {
@@ -796,16 +810,76 @@ func TestUpdateOhnoCounterTypicalCase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to parse updated_at: %s", err)
 	}
-
 	// Allow for a small time difference - 1 seconds
 	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
 		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
 	}
-
 	if counter.ResetedAt.Valid {
 		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
 	}
+	if counter.IsLocked != false {
+		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
+	}
 
+	// Cleanup table after test
+	cleanupTable(t, tableName)
+}
+
+// NOTE: Test covers a typical situation where there are some existing rows in the ohno_counter
+// table and we simply need to update the counter. It is expected to increment the counter by
+// one and update the updated_at field to NOW(). maxValue should not be updated because the
+// currentValue is too small
+func TestUpdateOhnoCounterTypicalCaseMaxValueNotReached(t *testing.T) {
+	tableName := utils.TableInstance.OhnoCounter
+
+	// Insert a row into the counter table
+	rawInsertQuery := `
+		INSERT INTO %s (current_value, max_value, is_locked, updated_at) 
+		VALUES 
+			(42, 200, false, '2024-05-30 12:34:56');`
+	insertQuery := fmt.Sprintf(rawInsertQuery, tableName)
+
+	_, err := db.Exec(insertQuery)
+
+	if err != nil {
+		t.Fatalf("failed to insert into table: %s, err: %s", tableName, err)
+	}
+
+	if db == nil {
+		t.Fatal("db is nil")
+	}
+
+	isUpdated := UpdateOhnoCounter()
+
+	if !isUpdated {
+		t.Errorf("expected isUpdated to be true, got %v", isUpdated)
+	}
+
+	counter, err := GetCounter(tableName)
+	if err != nil {
+		t.Fatalf("failed to get counter: %s", err)
+	}
+
+	if counter.CurrentValue != 43 {
+		t.Errorf("expected current_value to be 43, got %d", counter.CurrentValue)
+	}
+	if counter.MaxValue != 200 {
+		t.Errorf("expected max_value to be 200, got %d", counter.MaxValue)
+	}
+
+	// Check updated_at (should be close to current time)
+	expectedTime := time.Now().UTC()
+	parsedUpdatedAt, err := time.Parse(time.RFC3339, counter.UpdatedAt)
+	if err != nil {
+		t.Fatalf("failed to parse updated_at: %s", err)
+	}
+	// Allow for a small time difference - 1 seconds
+	if expectedTime.Sub(parsedUpdatedAt).Seconds() > 1 {
+		t.Errorf("expected updated_at to be close to '%s', got '%s'", expectedTime, counter.UpdatedAt)
+	}
+	if counter.ResetedAt.Valid {
+		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
+	}
 	if counter.IsLocked != false {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
@@ -821,13 +895,14 @@ func TestUpdateOhnoCounterTimeDidNotPass(t *testing.T) {
 	tableName := utils.TableInstance.OhnoCounter
 	// Check updated_at (should be close to current time)
 	updatedLessThan24hAgo := time.Now().UTC().Add(-23 * time.Hour)
+
 	parsedUpdatedLessThan24hAgo := updatedLessThan24hAgo.Format(time.RFC3339)
 
 	// Insert a row into the counter table
 	rawInsertQuery := `
-		INSERT INTO %s (current_value, is_locked, updated_at) 
+		INSERT INTO %s (current_value, max_value, is_locked, updated_at) 
 		VALUES 
-			(42, false, '%s');`
+			(42, 42, false, '%s');`
 	insertQuery := fmt.Sprintf(rawInsertQuery, tableName, parsedUpdatedLessThan24hAgo)
 
 	_, err := db.Exec(insertQuery)
@@ -855,16 +930,16 @@ func TestUpdateOhnoCounterTimeDidNotPass(t *testing.T) {
 	if counter.CurrentValue != 42 {
 		t.Errorf("expected current_value to be 42, got %d", counter.CurrentValue)
 	}
-
+	if counter.MaxValue != 42 {
+		t.Errorf("expected max_value to be 42, got %d", counter.MaxValue)
+	}
 	if counter.IsLocked != false {
 		t.Errorf("expected isLocked to be true, got %v", counter.IsLocked)
 	}
-
 	// Check updated_at (should be intact)
 	if counter.UpdatedAt != parsedUpdatedLessThan24hAgo {
 		t.Errorf("expected updated_at: '%s' to not change, got '%s'", parsedUpdatedLessThan24hAgo, counter.UpdatedAt)
 	}
-
 	if counter.ResetedAt.Valid {
 		t.Errorf("expected reseted_at to be null, got %v", counter.ResetedAt)
 	}
