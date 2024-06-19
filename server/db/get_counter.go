@@ -10,12 +10,12 @@ func GetCounter(tableName string) (Counter, error) {
 	var counter Counter
 	query := fmt.Sprintf(`
 		SELECT
-			current_value, is_locked, updated_at, reseted_at 
+			current_value, max_value, is_locked, updated_at, reseted_at
 		FROM %s 
 		LIMIT 1
 		`, tableName)
 	row := db.QueryRow(query)
-	err := row.Scan(&counter.CurrentValue, &counter.IsLocked, &counter.UpdatedAt, &counter.ResetedAt)
+	err := row.Scan(&counter.CurrentValue, &counter.MaxValue, &counter.IsLocked, &counter.UpdatedAt, &counter.ResetedAt)
 
 	if err != nil {
 		defaultIsLocked := false
@@ -25,6 +25,7 @@ func GetCounter(tableName string) (Counter, error) {
 		if err == sql.ErrNoRows {
 			emptyCounter := Counter{
 				CurrentValue: 0,
+				MaxValue:     0,
 				IsLocked:     defaultIsLocked,
 				UpdatedAt:    "",
 				ResetedAt:    sql.NullString{},

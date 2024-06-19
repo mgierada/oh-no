@@ -14,6 +14,7 @@ func CreateOhnoCounterTableIfNotExists(db *sql.DB) {
 	rawCreateTableQuery := `
 		CREATE TABLE IF NOT EXISTS %s (
 			current_value INT NOT NULL,
+			max_value INT NULL DEFAULT 0,
 			is_locked BOOLEAN NOT NULL DEFAULT TRUE,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			reseted_at TIMESTAMP NULL DEFAULT NULL
@@ -31,6 +32,7 @@ func CreateOhnoCounterTableIfNotExists(db *sql.DB) {
 		RETURNS TRIGGER AS $$
 		BEGIN
 			NEW.updated_at = now();
+			NEW.max_value = GREATEST(NEW.max_value, NEW.current_value);
 			RETURN NEW;
 		END;
 		$$ LANGUAGE plpgsql;
