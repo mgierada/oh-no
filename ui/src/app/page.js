@@ -1,6 +1,7 @@
 import CounterDisplay from "@/components/CounterDisplay";
 import Callendar from "@/components/Callendar";
 import { DisplayCard } from "@/components/Card";
+import HealthStatus from "@/components/HealthStatus";
 
 /**
  * @typedef {Object} CounterApiResponse
@@ -79,17 +80,18 @@ const Home = async () => {
     <main className="flex flex-col min-h-screen items-center justify-between p-4">
       <div className="flex space-x-4 justify-center lg:grid-cols-2 md:grid-cols-2">
         <DisplayCard
-          title="Best healthy"
+          title="Healthy"
           value={26}
           description="better then last time"
         />
         <DisplayCard
-          title="Worst ill"
+          title="Illness"
           value={2}
           description="worse then last time"
         />
       </div>
       <div className="flex flex-col items-center justify-center">
+        <HealthStatus isLocked={data.isLocked} error={data.error} />
         <CounterDisplay currentValue={data.currentValue} error={data.error} />
         <Callendar
           className="mt-5"
