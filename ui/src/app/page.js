@@ -118,14 +118,14 @@ const Home = async () => {
       <div className="flex flex-row items-center justify-center gap-20">
         <ActionButton
           variant="destructive"
-          toast_message="Ohno event successfully recorded"
-          cta_button="OhNo!"
+          toast_message="Sick event successfully recorded"
+          cta_button="Sick"
           icon="biohazard"
         />
         <ActionButton
           variant="outline"
-          toast_message="Ohno event successfully recorded"
-          cta_button="All good"
+          toast_message="Recover event successfully recorded"
+          cta_button="Recover"
           icon="activity"
         />
       </div>
