@@ -2,6 +2,7 @@ import CounterDisplay from "@/components/CounterDisplay";
 import Callendar from "@/components/Callendar";
 import { DisplayCard } from "@/components/Card";
 import HealthStatus from "@/components/HealthStatus";
+import { ActionButton } from "@/components/ActionButton";
 
 /**
  * @typedef {Object} CounterApiResponse
@@ -114,7 +115,12 @@ const Home = async () => {
           Click dates to see the details.
         </p>
       </div>
-      <div className="flex flex-col items-center justify-center"></div>
+      <div className="flex flex-col items-center justify-center">
+        <ActionButton
+          toast_message="Ohno event successfully recorded"
+          cta_button="Ohno!"
+        />
+      </div>
     </main>
   );
 };
