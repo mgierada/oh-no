@@ -68,7 +68,7 @@ const fetchCounter = async (endpoint) => {
       resetedAt: null,
       wasEverReset: null,
       isLocked: false,
-      error: "Failed to fetch current value",
+      error: `Failed to fetch ${endpoint} data.`,
     };
   }
 };
@@ -115,10 +115,18 @@ const Home = async () => {
           Click dates to see the details.
         </p>
       </div>
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-row items-center justify-center gap-20">
         <ActionButton
+          variant="destructive"
           toast_message="Ohno event successfully recorded"
-          cta_button="Ohno!"
+          cta_button="OhNo!"
+          icon="biohazard"
+        />
+        <ActionButton
+          variant="outline"
+          toast_message="Ohno event successfully recorded"
+          cta_button="All good"
+          icon="activity"
         />
       </div>
     </main>

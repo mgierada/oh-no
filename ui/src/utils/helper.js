@@ -3,7 +3,7 @@
  * @returns {string} formattedNow - The formatted date and time in the following format
  * Thursday, June 20 at 2024 at 2:41 PM
  */
-const formatCurrentDate = () => {
+const getAndFormatCurrentDate = () => {
   const options = {
     weekday: "long",
     year: "numeric",
@@ -17,4 +17,4 @@ const formatCurrentDate = () => {
   return now.toLocaleString("en-US", options).replace(/,([^,]*)$/, " at$1");
 };
 
-export default formatCurrentDate;
+export default getAndFormatCurrentDate;

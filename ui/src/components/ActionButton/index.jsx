@@ -1,13 +1,16 @@
 "use client";
 import { toast } from "sonner";
+import { Biohazard, Activity } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import formatCurrentDate from "@/utils/helper";
+import getAndFormatCurrentDate from "@/utils/helper";
 
 /**
  * @typedef {Object} ActionButtonProps
+ * @property {string} variant - a string that determines the variant of the button
  * @property {string} toast_message - the message to be displayed on on the toast popup
  * @property {string} cta_button - the call to action to be displayed on the button
+ * @property {string} icon - the icon to be displayed on the button
  */
 
 /**
@@ -15,15 +18,23 @@ import formatCurrentDate from "@/utils/helper";
  * @param {ActionButtonProps} actionButtonProps
  * @returns {JSX.Element}
  */
-export function ActionButton({ toast_message, cta_button }) {
+export function ActionButton({ variant, toast_message, cta_button, icon }) {
+  const renderIcon = (icon) => {
+    if (icon === "biohazard") {
+      return <Biohazard className="mr-2 h-4 w-4" />;
+    } else if (icon === "activity") {
+      return <Activity className="mr-2 h-4 w-4" />;
+    }
+    return null;
+  };
   return (
     <Button
-      variant="outline"
+      variant={variant}
       onClick={() =>
         toast(
           toast_message,
           {
-            description: formatCurrentDate(),
+            description: getAndFormatCurrentDate(),
             action: {
               label: "Ok",
               // onClick: () => console.log("Undo"),
@@ -33,7 +44,7 @@ export function ActionButton({ toast_message, cta_button }) {
         )
       }
     >
-      {cta_button}
+      {renderIcon(icon)} {cta_button}
     </Button>
   );
 }
