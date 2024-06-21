@@ -138,7 +138,7 @@ const Home = async () => {
           alertDialogDescription={`
             This action cannot be undone. 
             This will reset the healthy counter and start the sick interval.`}
-          handleUpdate={async function s() {
+          handleUpdate={async function update() {
             "use server";
             return recordEvent("ohno");
           }}
@@ -151,7 +151,10 @@ const Home = async () => {
           alertDialogDescription={`
             This action cannot be undone. 
             This will reset the sick counter and start the healthy interval.`}
-        // handleUpdate={recordEvent("fine")}
+          handleUpdate={async function update() {
+            "use server";
+            return recordEvent("fine");
+          }}
         />
       </div>
     </main>
