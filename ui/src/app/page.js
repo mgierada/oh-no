@@ -4,7 +4,7 @@ import { DisplayCard } from "@/components/Card";
 import HealthStatus from "@/components/HealthStatus";
 import { ActionButton } from "@/components/ActionButton";
 import { recordEvent } from "@/utils/actions";
-import { ThemeToggle } from "@/components/ActionButton/ThemeToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /**
  * Fetches the current value of the counter from the API.
