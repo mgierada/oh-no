@@ -3,65 +3,7 @@ import Callendar from "@/components/Callendar";
 import { DisplayCard } from "@/components/Card";
 import HealthStatus from "@/components/HealthStatus";
 import { ActionButton } from "@/components/ActionButton";
-
-/**
- * @typedef {Object} CounterApiResponse
- * @property {number} CurrentValue - The current value of the counter.
- * @property {number} MaxValue - the maximum value of the counter recorded so far.
- * @property {string} UpdatedAt - The timestamp when the counter was last updated.
- * @property {Object} ResetedAt - The reset information.
- * @property {string} ResetedAt.String - The timestamps when the counter was reset.
- * @property {boolean} ResetedAt.Valid - The validity of the reset object timestamps.
- * @property {boolean} IsLocked - Indicates if the counter is locked.
- */
-
-/**
- * @typedef {Object} Counter
- * @property {number|null} currentValue - The current value of the counter.
- * @property {number|null} maxValue - The max value of the counter recorded so far.
- * @property {string|null} updatedAt - The timestamps when the last update was made.
- * @property {boolean} isLocked - A flag indicating whether the counter updates are currently locked
- * @property {string|null} resetedAt - The timestamps when the counter was reset.
- * @property {boolean|null} wasEverReset - The validity of the reset object timestamps.
- * @property {string|null} error - The error message if fetching failed.
- */
-
-/**
- * @typedef {Object } RecordEventApiResponse
- * @property {string} message - The message returned from the API.
- */
-
-/**
- * Records an event to the API.
- * @param {string} endpoint - The endpoint to record the event to.
- * @returns {Promise<void>} A promise that resolves when the event is successfully recorded.
- */
-const recordEvent = async (endpoint) => {
-  try {
-    const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
-    const url = `${rootUrl}/${endpoint}`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to record event");
-    }
-
-    /** @type {RecordEventApiResponse} */
-    const data = await response.json();
-    if (!data || !data.message) {
-      throw new Error("Invalid response data");
-    }
-    return;
-  } catch (error) {
-    throw new Error(`Error recording event: ${error}`);
-  }
-};
+import { recordEvent } from "@/utils/actions";
 
 /**
  * Fetches the current value of the counter from the API.
@@ -79,14 +21,12 @@ const fetchCounter = async (endpoint) => {
       throw new Error("Failed to fetch data");
     }
 
-    /** @type {CounterApiResponse} */
     const data = await response.json();
 
     if (!data) {
       throw new Error("Invalid response data");
     }
 
-    /** @type {Counter} */
     const result = {
       currentValue: data.CurrentValue,
       maxValue: data.MaxValue,
@@ -98,7 +38,6 @@ const fetchCounter = async (endpoint) => {
     };
     return result;
   } catch (error) {
-    /** @type {Counter} */
     return {
       currentValue: null,
       maxValue: null,
@@ -116,17 +55,9 @@ const fetchCounter = async (endpoint) => {
  * @returns {JSX.Element} The Home component.
  */
 const Home = async () => {
-  /** @type {Counter} */
   const dataHealthyCounter = await fetchCounter("counter");
-  /**@type {Counter} */
   const dataIllnessCounter = await fetchCounter("ohno-counter");
 
-  /**
-   * Method to render the counter display conditionally
-   * @param {Counter} dataHealthyCounter - The healthy counter data.
-   * @param {Counter} dataIllnessCounter - The illness counter data.
-   * @returns {JSX.Element} The counter display component
-   */
   const renderCounterDisplay = (dataHealthyCounter, dataIllnessCounter) => {
     if (dataHealthyCounter.error && dataIllnessCounter.error) {
       return (
@@ -189,10 +120,6 @@ const Home = async () => {
           error={dataHealthyCounter.error}
         />
         {renderCounterDisplay(dataHealthyCounter, dataIllnessCounter)}
-        {/* <CounterDisplay */}
-        {/*   currentValue={dataHealthyCounter.currentValue} */}
-        {/*   error={dataHealthyCounter.error} */}
-        {/* /> */}
         <Callendar
           className="mt-5"
           lastTimeReseted={dataHealthyCounter.resetedAt}
@@ -211,6 +138,10 @@ const Home = async () => {
           alertDialogDescription={`
             This action cannot be undone. 
             This will reset the healthy counter and start the sick interval.`}
+          handleUpdate={async function s() {
+            "use server";
+            return recordEvent("ohno");
+          }}
         />
         <ActionButton
           variant="outline"
@@ -220,6 +151,7 @@ const Home = async () => {
           alertDialogDescription={`
             This action cannot be undone. 
             This will reset the sick counter and start the healthy interval.`}
+        // handleUpdate={recordEvent("fine")}
         />
       </div>
     </main>

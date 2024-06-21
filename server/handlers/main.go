@@ -63,14 +63,16 @@ func recordEvent(w http.ResponseWriter, r *http.Request, tableToResetAndLock str
 }
 
 func RecordOhNoEvent(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received /ohno request")
+	log.Printf("🔗 received /ohno request of type %s", r.Method)
 	serverResponseOkMessage := "Oh No! Event recorded"
+	utils.EnableCors(&w, r)
 	recordEvent(w, r, utils.TableInstance.Counter, utils.TableInstance.OhnoCounter, utils.TableInstance.HistoricalCounter, serverResponseOkMessage)
 
 }
 
 func RecordFineEvent(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔗 received /fine request")
+	log.Printf("🔗 received /fine request of type %s", r.Method)
 	serverResponseOkMessage := "It's all good now! Event recorded"
+	utils.EnableCors(&w, r)
 	recordEvent(w, r, utils.TableInstance.OhnoCounter, utils.TableInstance.Counter, utils.TableInstance.HistoricalOhnoCounter, serverResponseOkMessage)
 }

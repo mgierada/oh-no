@@ -23,6 +23,7 @@ import {
  * @property {string} ctaButton - the call to action to be displayed on the button
  * @property {string} icon - the icon to be displayed on the button
  * @property {string} alertDialogDescription - description text shown on the alert dialog
+ * @property {function} handleUpdate - function to be called when the button is clicked
  */
 
 /**
@@ -36,6 +37,7 @@ export function ActionButton({
   ctaButton,
   icon,
   alertDialogDescription,
+  handleUpdate,
 }) {
   const [showAlertDialog, setShowAlertDialog] = useState(false);
 
@@ -48,16 +50,26 @@ export function ActionButton({
     return null;
   };
 
-  const handleConfirm = () => {
-    toast(toastMessage, {
-      description: getAndFormatCurrentDate(),
-      action: {
-        label: "Dismiss",
-      },
-    });
-    //TODO: add integration with backed
-    console.log("Event has been recorded");
-    setShowAlertDialog(false);
+  const handleConfirm = async () => {
+    try {
+      await handleUpdate();
+      toast(toastMessage, {
+        description: getAndFormatCurrentDate(),
+        action: {
+          label: "Dismiss",
+        },
+      });
+      console.log("Event has been recorded");
+      setShowAlertDialog(false);
+    } catch (error) {
+      console.error("Failed to record an event:", error);
+      toast("Failed to record an event", {
+        description: error.message,
+        action: {
+          label: "Dismiss",
+        },
+      });
+    }
   };
 
   return (
