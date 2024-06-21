@@ -27,7 +27,45 @@ import { ActionButton } from "@/components/ActionButton";
  */
 
 /**
+ * @typedef {Object } RecordEventApiResponse
+ * @property {string} message - The message returned from the API.
+ */
+
+/**
+ * Records an event to the API.
+ * @param {string} endpoint - The endpoint to record the event to.
+ * @returns {Promise<void>} A promise that resolves when the event is successfully recorded.
+ */
+const recordEvent = async (endpoint) => {
+  try {
+    const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
+    const url = `${rootUrl}/${endpoint}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to record event");
+    }
+
+    /** @type {RecordEventApiResponse} */
+    const data = await response.json();
+    if (!data || !data.message) {
+      throw new Error("Invalid response data");
+    }
+    return;
+  } catch (error) {
+    throw new Error(`Error recording event: ${error}`);
+  }
+};
+
+/**
  * Fetches the current value of the counter from the API.
+ * @param {string} endpoint - The endpoint to fetch the counter data from.
  * @returns {Promise<Counter>} A promise that resolves to an object containing the current value and an error message if any.
  */
 const fetchCounter = async (endpoint) => {
@@ -83,6 +121,54 @@ const Home = async () => {
   /**@type {Counter} */
   const dataIllnessCounter = await fetchCounter("ohno-counter");
 
+  /**
+   * Method to render the counter display conditionally
+   * @param {Counter} dataHealthyCounter - The healthy counter data.
+   * @param {Counter} dataIllnessCounter - The illness counter data.
+   * @returns {JSX.Element} The counter display component
+   */
+  const renderCounterDisplay = (dataHealthyCounter, dataIllnessCounter) => {
+    if (dataHealthyCounter.error && dataIllnessCounter.error) {
+      return (
+        <CounterDisplay currentValue={null} error={dataHealthyCounter.error} />
+      );
+    }
+
+    if (dataHealthyCounter.isLocked && dataIllnessCounter.isLocked) {
+      return (
+        <CounterDisplay
+          currentValue="N/D"
+          error="Something is wrong with counters."
+        />
+      );
+    }
+
+    if (!dataHealthyCounter.isLocked && !dataIllnessCounter.isLocked) {
+      return (
+        <CounterDisplay
+          currentValue="N/D"
+          error="Something is wrong with counters."
+        />
+      );
+    }
+
+    if (dataHealthyCounter.isLocked) {
+      return (
+        <CounterDisplay
+          currentValue={dataIllnessCounter.currentValue}
+          error={dataIllnessCounter.error}
+        />
+      );
+    }
+
+    return (
+      <CounterDisplay
+        currentValue={dataHealthyCounter.currentValue}
+        error={dataHealthyCounter.error}
+      />
+    );
+  };
+
   return (
     <main className="flex flex-col min-h-screen items-center justify-between p-4">
       <div className="flex space-x-4 justify-center lg:grid-cols-2 md:grid-cols-2">
@@ -102,10 +188,11 @@ const Home = async () => {
           isLocked={dataHealthyCounter.isLocked}
           error={dataHealthyCounter.error}
         />
-        <CounterDisplay
-          currentValue={dataHealthyCounter.currentValue}
-          error={dataHealthyCounter.error}
-        />
+        {renderCounterDisplay(dataHealthyCounter, dataIllnessCounter)}
+        {/* <CounterDisplay */}
+        {/*   currentValue={dataHealthyCounter.currentValue} */}
+        {/*   error={dataHealthyCounter.error} */}
+        {/* /> */}
         <Callendar
           className="mt-5"
           lastTimeReseted={dataHealthyCounter.resetedAt}
