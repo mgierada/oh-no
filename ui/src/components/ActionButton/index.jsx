@@ -92,7 +92,7 @@ export function ActionButton({
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirm}>
-                Sure, let's go!
+                Sure, let&apos;s go!
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
