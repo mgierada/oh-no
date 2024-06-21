@@ -118,15 +118,21 @@ const Home = async () => {
       <div className="flex flex-row items-center justify-center gap-20">
         <ActionButton
           variant="destructive"
-          toast_message="Sick event successfully recorded"
-          cta_button="Sick"
+          toastMessage="Sick event successfully recorded"
+          ctaButton="Sick"
           icon="biohazard"
+          alertDialogDescription={`
+            This action cannot be undone. 
+            This will reset the healthy counter and start the sick interval.`}
         />
         <ActionButton
           variant="outline"
-          toast_message="Recover event successfully recorded"
-          cta_button="Recover"
+          toastMessage="Recover event successfully recorded"
+          ctaButton="Recover"
           icon="activity"
+          alertDialogDescription={`
+            This action cannot be undone. 
+            This will reset the sick counter and start the healthy interval.`}
         />
       </div>
     </main>
