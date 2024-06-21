@@ -1,5 +1,3 @@
-// "use server";
-
 /**
  * @typedef {Object } RecordEventApiResponse
  * @property {string} message - The message returned from the API.

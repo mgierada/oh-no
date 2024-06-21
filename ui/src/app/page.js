@@ -4,6 +4,7 @@ import { DisplayCard } from "@/components/Card";
 import HealthStatus from "@/components/HealthStatus";
 import { ActionButton } from "@/components/ActionButton";
 import { recordEvent } from "@/utils/actions";
+import { ThemeToggle } from "@/components/ActionButton/ThemeToggle";
 
 /**
  * Fetches the current value of the counter from the API.
@@ -113,6 +114,7 @@ const Home = async () => {
           value={dataIllnessCounter.maxValue}
           description="Maximum duration of the illness in days"
         />
+        <ThemeToggle />
       </div>
       <div className="flex flex-col items-center justify-center">
         <HealthStatus

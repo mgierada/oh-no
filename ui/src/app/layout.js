@@ -4,6 +4,7 @@ import "./globals.css";
 import { useEffect } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export default function RootLayout({ children }) {
   useEffect(() => {
@@ -14,7 +15,16 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head />
       <body>
-        <main>{children}</main>
+        <main>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </main>
         <Toaster />
       </body>
     </html>
