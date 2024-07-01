@@ -10,7 +10,7 @@
  */
 export const recordEvent = async (eventType) => {
   const rootUrl = process.env.NEXT_PUBLIC_ROOT_API_URL;
-  const url = `${rootUrl}${eventType}`;
+  const url = `${rootUrl}/${eventType}`;
 
   try {
     const response = await fetch(url, {
