@@ -103,7 +103,10 @@ const Home = async () => {
 
   return (
     <main className="flex flex-col min-h-screen items-center justify-between p-4">
-      <div className="flex space-x-4 justify-center lg:grid-cols-2 md:grid-cols-2">
+      <div className="absolute top-0 right-0 m-4">
+        <ThemeToggle />
+      </div>
+      <div className="flex space-x-4 justify-center lg:grid-cols-2 md:grid-cols-2 mt-16">
         <DisplayCard
           title="Healthy"
           value={dataHealthyCounter.maxValue}
@@ -114,7 +117,6 @@ const Home = async () => {
           value={dataIllnessCounter.maxValue}
           description="Maximum duration of the illness in days"
         />
-        <ThemeToggle />
       </div>
       <div className="flex flex-col items-center justify-center">
         <HealthStatus
@@ -159,7 +161,7 @@ const Home = async () => {
           }}
         />
       </div>
-    </main>
+    </main >
   );
 };
 
