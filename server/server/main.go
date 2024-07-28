@@ -1,18 +1,25 @@
 package main
 
 import (
-	"errors"
+	// "errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"server/db"
-	"server/handlers"
+	// "server/handlers"
 )
 
 func main() {
 	db.Connect()
+	port := os.Getenv("PORT")
+	host := os.Getenv("HOST")
+
+	addr := fmt.Sprintf("%s:%s", host, port)
+	log.Print("🏗️  Starting the server...")
+	log.Printf("🚀 Listening on %s\n", addr)
+
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -32,12 +39,6 @@ func main() {
 	// http.HandleFunc("/increment", handlers.IncrementCounter)
 	// http.HandleFunc("/manual-increment", handlers.SetCounterValue)
 
-	// port := os.Getenv("PORT")
-	// host := os.Getenv("HOST")
-	//
-	// addr := fmt.Sprintf("%s:%s", host, port)
-	// log.Print("🏗️  Starting the server...")
-	// log.Printf("🚀 Listening on %s\n", addr)
 	//
 	// err := http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 	//
