@@ -1,14 +1,15 @@
 package main
 
 import (
-	// "errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"server/db"
-	// "server/handlers"
+	"server/handlers"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -18,17 +19,18 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%s", host, port)
 	log.Print("🏗️  Starting the server...")
-	log.Printf("🚀 Listening on %s\n", addr)
 
 	r := gin.Default()
+	r.Use(cors.Default())
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
-	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
-	// http.HandleFunc("/ohno", handlers.RecordOhNoEvent)
-	// http.HandleFunc("/", handlers.RedirectToCounter)
+	r.GET("/counter", handlers.GetCounter)
+	r.GET("/", handlers.RedirectToCounter)
+	r.POST("/ohno", handlers.RecordOhNoEvent)
+	r.POST("/fine", handlers.RecordFineEvent)
 	// http.HandleFunc("/fine", handlers.RecordFineEvent)
 	// http.HandleFunc("/historical/counter", handlers.GetHistoricalCounter)
 	// http.HandleFunc("/historical/ohno-counter", handlers.GetHistoricalOhnoCounter)
@@ -39,14 +41,7 @@ func main() {
 	// http.HandleFunc("/increment", handlers.IncrementCounter)
 	// http.HandleFunc("/manual-increment", handlers.SetCounterValue)
 
-	//
-	// err := http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
-	//
-	// if errors.Is(err, http.ErrServerClosed) {
-	// 	log.Printf("server closed\n")
-	// } else if err != nil {
-	// 	log.Fatalf("error starting server: %s\n", err)
-	// 	os.Exit(1)
-	// }
+	r.Run(addr)
+	log.Printf("🚀 Listening on %s\n", addr)
 
 }

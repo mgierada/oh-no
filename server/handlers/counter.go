@@ -6,18 +6,32 @@ import (
 	"net/http"
 	"server/db"
 	"server/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
-func GetCounter(w http.ResponseWriter, r *http.Request) {
+// func GetCounter(w http.ResponseWriter, r *http.Request) {
+// 	log.Printf("🔗 received /counter request\n")
+//
+// 	counter, err := db.GetCounter("counter")
+// 	if err != nil {
+// 		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
+// 	}
+// EnableCors(c)
+// c.JSON(http.StatusOK, counter)
+// }
+
+func GetCounter(c *gin.Context) {
 	log.Printf("🔗 received /counter request\n")
 
 	counter, err := db.GetCounter("counter")
 	if err != nil {
-		log.Fatalf("❌ Error retrieving counter data.\n %s", err)
+		log.Printf("❌ Error retrieving counter data.\n %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving counter data"})
+		return
 	}
+	c.JSON(http.StatusOK, counter)
 
-	utils.EnableCors(&w, r)
-	MarshalJson(&w, http.StatusOK, counter)
 }
 
 func GetOhnoCounter(w http.ResponseWriter, r *http.Request) {
